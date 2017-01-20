@@ -1,0 +1,2 @@
+#!/bin/sh
+aclocal; autoheader; autoconf -f; automake -f --add-missing; ./configure --enable-blas_omp; make clean; make; 
