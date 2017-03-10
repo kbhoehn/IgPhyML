@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -151,14 +157,14 @@ void Round_Optimize(t_tree *tree, calign *data, int n_round_max)
   each = 0;
   tol = 1.e-2;
   root = tree->noeud[tree->mod->startnode];
-  if(tree->mod->whichrealmodel == HLP16){
+  if(tree->mod->whichrealmodel == HLP17){
 	  root = tree->noeud[tree->mod->startnode];
   }
   
 
   while(n_round < n_round_max)
     {
-	  if(tree->mod->whichrealmodel != HLP16){
+	  if(tree->mod->whichrealmodel != HLP17){
 		  (!((n_round+2)%2))?(root=tree->noeud[0]):(root=tree->noeud[tree->n_otu-1]);
 	  }
       
@@ -173,7 +179,7 @@ void Round_Optimize(t_tree *tree, calign *data, int n_round_max)
 	
 	if(tree->mod->s_opt->opt_bl){
 		Lk(tree);
-		if(tree->mod->whichrealmodel == HLP16){Get_UPP(root, root->v[0], tree);}
+		if(tree->mod->whichrealmodel == HLP17){Get_UPP(root, root->v[0], tree);}
 	//	Get_Lhood(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);
 		Optimize_Br_Len_Serie(root,root->v[0],root->b[0],tree,data);
 	}
@@ -187,7 +193,7 @@ void Round_Optimize(t_tree *tree, calign *data, int n_round_max)
 	if(tree->mod->s_opt->opt_bl){
 		tree->both_sides = 1;
      	Lk(tree);
-     	if(tree->mod->whichrealmodel == HLP16){Get_UPP(root, root->v[0], tree);}
+     	if(tree->mod->whichrealmodel == HLP17){Get_UPP(root, root->v[0], tree);}
 	//	Get_Lhood(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);
 		Optimize_Br_Len_Serie(root,root->v[0],root->b[0],tree,data);
 	}
@@ -202,7 +208,7 @@ void Round_Optimize(t_tree *tree, calign *data, int n_round_max)
 	}
       }
       Lk(tree);
-      if(tree->mod->whichrealmodel == HLP16){
+      if(tree->mod->whichrealmodel == HLP17){
     	  Get_UPP(root, root->v[0], tree);
     	  Get_Lhood(root,root->v[0],tree);
       }
@@ -259,7 +265,7 @@ void Optimize_Br_Len_Serie(t_node *a, t_node *d, t_edge *b_fcus, t_tree *tree, c
 
   	//Added to catch potential issues with branch optimization
 
-  if(tree->mod->whichrealmodel == HLP16){
+  if(tree->mod->whichrealmodel == HLP17){
    if(tree->c_lnL < lk_init - tree->mod->s_opt->min_diff_lk_local){
 
 		  PhyML_Printf("\n. %f %f %f %f %d %d %d\n",l_infa,l_max,l_infb,b_fcus->l,b_fcus->num,a->num,d->num);
@@ -272,7 +278,7 @@ void Optimize_Br_Len_Serie(t_node *a, t_node *d, t_edge *b_fcus, t_tree *tree, c
   if(a->num == tree->mod->startnode){
 	//   printf("doing root adjustment7\n");
 	//   Update_P_Lk(tree,d->anc_edge,d);
-	  if(tree->mod->whichrealmodel == HLP16){Fill_UPP_root(tree,d->anc_edge);}
+	  if(tree->mod->whichrealmodel == HLP17){Fill_UPP_root(tree,d->anc_edge);}
   }
   //printf("did root adjustment\n");
 
@@ -280,7 +286,7 @@ void Optimize_Br_Len_Serie(t_node *a, t_node *d, t_edge *b_fcus, t_tree *tree, c
    else For(i,3) if(d->v[i] != a)
    {
 	   Update_P_Lk(tree,d->b[i],d);
-	   if(tree->mod->whichrealmodel == HLP16){Fill_UPP_single(tree,d->b[i]);}
+	   if(tree->mod->whichrealmodel == HLP17){Fill_UPP_single(tree,d->b[i]);}
 	   Optimize_Br_Len_Serie(d,d->v[i],d->b[i],tree,cdata);
    }
   
@@ -330,7 +336,7 @@ void Optimiz_Ext_Br(t_tree *tree)
 	  b->nni->best_conf = 0;
 	  b->l              = l_init;
 
-	  if(tree->mod->whichrealmodel == HLP16){
+	  if(tree->mod->whichrealmodel == HLP17){
 	  Update_PMat_At_Given_Edge(b,tree);
 
 	  }
@@ -449,7 +455,7 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
 		int omegai; //added by Ken 18/8/2016
 		 for(omegai=0;omegai<tree->mod->nomega_part;omegai++){
 		    x2min[numParams++]           = tree->mod->omega_part[omegai];
-		    x2minbound[numParams-1][0]   = TREEBOUNDLOW;
+		    x2minbound[numParams-1][0]   = TREEBOUNDLOW*100; //changed by Ken 9/2/2017 due to underflow issues with highly polymorphic lineages
 		    x2minbound[numParams-1][1]   = TREEBOUNDHIGH;
 
 		  }
@@ -481,7 +487,6 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
       }
       if(tree->mod->opthotness == 1) //added by Kenneth Hoehn
       {
-    	  if(tree->mod->hmode==HDISCRETE){
     		  int c;
     	  	  for(c=0;c<tree->mod->nhotness;c++){
     		  if(tree->mod->hoptindex[c] == 1){
@@ -490,19 +495,7 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
     	  	  	  x2minbound[numParams-1][1]   = TREEBOUNDHIGH;
     	  	 	 }
     	  	  }
-    	  }else{
-    		  if(tree->mod->hoptindex[0] == 1){
-    		  x2min[numParams++]           = tree->mod->hintercept;
-    		  x2minbound[numParams-1][0]   = 0;
-    		  x2minbound[numParams-1][1]   = TREEBOUNDHIGH;
-    		  x2min[numParams++]           = tree->mod->hhotspot;
-    		  x2minbound[numParams-1][0]   = 0;
-    		  x2minbound[numParams-1][1]   = TREEBOUNDHIGH;
-    		  x2min[numParams++]           = tree->mod->hcoldspot;
-    		  x2minbound[numParams-1][0]   = 0;
-    		  x2minbound[numParams-1][1]   = TREEBOUNDHIGH;
-    		  }
-    	  }
+
       }
       
       if(tree->mod->s_opt->opt_state_freq)
@@ -739,9 +732,7 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
 		  }
 	  }
 	  else if(tree->mod->omegaSiteVar==DMODELK)
-	  { /*printf("\n");
-        For(i,tree->mod->n_w_catg) {printf("%f ",tree->mod->prob_omegas_uns[i]); printf("%f\n",tree->mod->prob_omegas[i]); }
-	printf("\n");*/	
+	  {
 	    For(i,tree->mod->n_w_catg)
 	    {
 	      Generic_Brent_Lk(&(tree->mod->omegas[i]),
@@ -762,9 +753,6 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
 				Optwrap_Lk,NULL,tree,NULL);
 	      }
 	    }
-// 	    printf("\n");
-//         For(i,tree->mod->n_w_catg) {printf("%f ",tree->mod->prob_omegas_uns[i]); printf("%f\n",tree->mod->prob_omegas[i]); }
-// 	printf("\n");
 	  }
 	  else if(tree->mod->omegaSiteVar==DGAMMAK)
 	  {
@@ -1055,7 +1043,6 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
       }
       
       if(tree->mod->opthotness==1){
-    	if(tree->mod->hmode==HDISCRETE){
     	 int c,d;
     	 for(c=0;c<tree->mod->nmotifs;c++){
     	  char *info = malloc(22);
@@ -1073,14 +1060,7 @@ void Optimiz_All_Free_Param(t_tree *tree, int verbose)
     	  Print_Lk(tree,info);
     	  PhyML_Printf("[%.3f]",tree->mod->hotness[tree->mod->motif_hotness[c]]);
     	 }
-       }else{
-    	  Print_Lk(tree,"[hintercept         ]");
-    	  PhyML_Printf("[%.3f]",tree->mod->hintercept);
-    	  Print_Lk(tree,"[hhotspot           ]");
-    	  PhyML_Printf("[%.3f]",tree->mod->hhotspot);
-    	  Print_Lk(tree,"[hcoldspot          ]");
-    	  PhyML_Printf("[%.3f]",tree->mod->hcoldspot);
-      }
+
       }
 
       if(tree->mod->s_opt->opt_state_freq)
@@ -1434,13 +1414,6 @@ void Opt_Dist_F(phydbl *dist, phydbl *F, model *mod)
   Dist_F_Brent(ax,bx,cx,1.E-10,1000,dist,F,mod);
 }
 
-/*********************************************************/
-/*
-phydbl Optwrap_Part_Lk(t_edge *b, t_tree *tree, supert_tree *stree)
-{
-  return PART_Lk(stree);
-}
-*/
 /*********************************************************/
 
 phydbl Optwrap_Lk(t_edge *b, t_tree *tree, supert_tree *stree)
@@ -2064,5 +2037,4 @@ phydbl Sum (phydbl x[], int n)
   for(i=0; i<n; i++) t += x[i];    
   return(t); 
 }
-/*********************************************************/
 /*********************************************************/

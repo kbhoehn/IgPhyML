@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -33,13 +39,47 @@ void Simu_Loop(t_tree *tree)
   
   Print_Lk(tree,"[Initial Tree       ]");
   
+  //added by Ken 8/3/2017
+  /* Optimise branch lengths */
+  	  Optimiz_All_Free_Param(tree,(tree->io->quiet)?(0):(tree->mod->s_opt->print));
+        //optimze branch lengths initially
+	  int startnode = 0;
+	  if(tree->mod->whichrealmodel==HLP17){
+		  startnode=tree->mod->startnode;
+		  tree->both_sides = 1;
+		  Lk(tree);
+		  Update_Ancestors_Edge(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree->noeud[tree->mod->startnode]->b[0],tree); //added by Ken 7/11
+		  Get_UPP(tree->noeud[startnode], tree->noeud[startnode]->v[0], tree);
+	  }
+
+	  Optimize_Br_Len_Serie(tree->noeud[startnode],
+			tree->noeud[startnode]->v[0],
+			tree->noeud[startnode]->b[0],
+			tree,
+			tree->data);
+
+	  /* Update partial likelihoods */
+	  tree->both_sides = 1;
+	  Lk(tree);
+	  if(tree->mod->whichrealmodel==HLP17){
+		  Get_UPP(tree->noeud[startnode], tree->noeud[startnode]->v[0], tree);
+	  }
+	  if(tree->io->print_trace){
+		  Print_Trace(tree);
+	  }
+	  Print_Lk(tree,"[Branch lengths     ]");
+
+
+  int first=0;
   if(tree->io->opt_heuristic_manuel==NO) //!Added by Marcelo
   {
 
     do //optimize topology and parameters while lhood increasing to a certain point
     { 
       lk_old = tree->c_lnL;
-      Optimiz_All_Free_Param(tree,(tree->io->quiet)?(0):(tree->mod->s_opt->print));
+      if(first != 0)Optimiz_All_Free_Param(tree,(tree->io->quiet)?(0):(tree->mod->s_opt->print));
+      first++;
+
       if(!Simu(tree,10)) 
       {
 	Check_NNI_Five_Branches(tree);
@@ -143,8 +183,9 @@ int Simu(t_tree *tree, int n_step_max)
       if(step > n_step_max) break;
 
       if(tree->io->print_trace){
-    	  PhyML_Fprintf(tree->io->fp_out_trace,"[%f]%s\n",tree->c_lnL,Write_Tree(tree)); fflush(tree->io->fp_out_trace);
-    	  if(tree->io->print_site_lnl) Print_Site_Lk(tree,tree->io->fp_out_lk); fflush(tree->io->fp_out_lk);
+    	  //PhyML_Fprintf(tree->io->fp_out_trace,"[%f]%s\n",tree->c_lnL,Write_Tree(tree)); fflush(tree->io->fp_out_trace);
+    	  //if(tree->io->print_site_lnl) Print_Site_Lk(tree,tree->io->fp_out_lk); fflush(tree->io->fp_out_lk);
+    	  Print_Trace(tree);
       }
 
       if((tree->mod->s_opt->print) && (!tree->io->quiet)) Print_Lk(tree,"[Topology           ]");
@@ -152,7 +193,7 @@ int Simu(t_tree *tree, int n_step_max)
 /*       if(((tree->c_lnL > old_loglk) && (FABS(old_loglk-tree->c_lnL) < tree->mod->s_opt->min_diff_lk_global)) || (n_without_swap > it_lim_without_swap)) break; */
       if((FABS(old_loglk-tree->c_lnL) < tree->mod->s_opt->min_diff_lk_global) || (n_without_swap > it_lim_without_swap)) break;
 
-      if(tree->mod->whichrealmodel == HLP16){Get_UPP(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);}
+      if(tree->mod->whichrealmodel == HLP17){Get_UPP(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);}
 
       Fill_Dir_Table(tree);
       Fix_All(tree);

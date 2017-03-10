@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -47,9 +53,7 @@ int main(int argc, char **argv){
   time_t t_beg,	/*!< Start Time.*/ t_end; /*!< Stop Time.*/ 
   phydbl best_lnL,most_likely_size,tree_size;
   int r_seed;
-  // int i;
   char *most_likely_tree=NULL;
-  // int seed; //!Added by Marcelo.
 
   tree             = NULL;
   mod              = NULL;
@@ -58,16 +62,17 @@ int main(int argc, char **argv){
   tree_size        = -1.0;
   
   r_seed = abs(4*(int)time(NULL)*(int)time(NULL)+4*(int)time(NULL)+1); //!< Modified by Marcelo
+  //r_seed=1234;
   srand(r_seed);
   SetSeed(r_seed);
   
   io = (option *)Get_Input(argc,argv); //!< Read the simulation options from interface or command line.
   io->r_seed = (io->r_seed<0)?r_seed:io->r_seed;
-  
-  if(io->mod->whichrealmodel != HLP16 && io->mod->partfilespec != 0){
-	  printf("\n. Site-partitioned omega only available with HLP16 right now. Sorry.");
+  //io->r_seed=1234;
+  if(io->mod->whichrealmodel != HLP17 && io->mod->partfilespec != 0){
+	  printf("\n. Site-partitioned omega only available with HLP17 right now. Sorry.");
 	  printf("\n. This is mostly due to laziness, so feel free to complain to Ken about this.");
-	  printf("\n. In the meantime, if you really want to, try running -m HLP16 --hotness 0 instead of -m GY\n\n");
+	  printf("\n. In the meantime, try running -m HLP17 --hotness 0 instead of -m GY\n\n");
 	  exit(EXIT_FAILURE);
   }
 
@@ -81,14 +86,12 @@ int main(int argc, char **argv){
   //TURNS OFF ALRT
   io->ratio_test = 0;
 
-  if((io->n_data_sets > 1) && (io->n_trees > 1))
-  {
+  if((io->n_data_sets > 1) && (io->n_trees > 1)){
     io->n_data_sets = MIN(io->n_trees,io->n_data_sets);
     io->n_trees     = MIN(io->n_trees,io->n_data_sets);
   }
 
-  For(num_data_set,io->n_data_sets)
-  {
+  For(num_data_set,io->n_data_sets){
     n_otu = 0;
     best_lnL = UNLIKELY;
 
@@ -122,14 +125,12 @@ int main(int argc, char **argv){
     	  PhyML_Printf("\n. Err in file %s at line %d\n",__FILE__,__LINE__);
 	  	  Warn_And_Exit("");
       }
-      for(num_tree=(io->n_trees == 1)?(0):(num_data_set);num_tree < io->n_trees;num_tree++)
-      {
-	if(!io->mod->s_opt->random_input_tree) io->mod->s_opt->n_rand_starts = 1;
+      for(num_tree=(io->n_trees == 1)?(0):(num_data_set);num_tree < io->n_trees;num_tree++){
+    	  if(!io->mod->s_opt->random_input_tree) io->mod->s_opt->n_rand_starts = 1;
 	  
-	For(num_rand_tree,io->mod->s_opt->n_rand_starts)
-	{
+	For(num_rand_tree,io->mod->s_opt->n_rand_starts){
 	  if((io->mod->s_opt->random_input_tree) && (io->mod->s_opt->topo_search != NNI_MOVE))
-	    if(!io->quiet) PhyML_Printf("\n. [Random start %3d/%3d]\n",num_rand_tree+1,io->mod->s_opt->n_rand_starts);
+	  if(!io->quiet) PhyML_Printf("\n. [Random start %3d/%3d]\n",num_rand_tree+1,io->mod->s_opt->n_rand_starts);
 
 	  io->init_run=1; //! Added by Marcelo.
 	  Init_Model(cdata,mod,io);
@@ -141,7 +142,6 @@ int main(int argc, char **argv){
 	    case 2 :          { tree = Read_User_Tree(cdata,mod,io); break; }
 	  }
 
-	 
 	  if(!tree) continue;
 	    
 	  #if defined OMP || defined BLAS_OMP
@@ -156,7 +156,6 @@ int main(int argc, char **argv){
 	   
 	  #endif
 
-
 	  io->tree          = tree;  
 	  tree->mod         = mod;
 	  tree->io          = io;
@@ -165,8 +164,8 @@ int main(int argc, char **argv){
 	  tree->n_pattern   = tree->data->crunch_len;
 
 	  //added by Ken
-	  //Find location of root node if HLP16
-	  if(mod->whichrealmodel == HLP16){
+	  //Find location of root node if HLP17
+	  if(mod->whichrealmodel == HLP17){
 	  	  io->mod->startnode = -1;
 	      int nodepos;
 	      for(nodepos=0;nodepos<((tree->n_otu-1)*2);nodepos++){
@@ -204,7 +203,14 @@ int main(int argc, char **argv){
 
 	  Prepare_Tree_For_Lk(tree);
 
-	  if(tree->mod->ambigprint && tree->mod->whichrealmodel == HLP16){
+	  //stretch initial tree branches
+	  int n_edges=2*tree->n_otu-3;
+	  int br=0;
+	  For(br,n_edges){
+		  tree->t_edges[br]->l=tree->t_edges[br]->l*tree->mod->stretch;
+	  }
+
+	  if(tree->mod->ambigprint && tree->mod->whichrealmodel == HLP17){
 		  FILE *ambigfile = fopen(tree->mod->ambigfile, "w");
 		  if (ambigfile == NULL){
 		      printf("Error opening ambig file!\n");
@@ -214,7 +220,7 @@ int main(int argc, char **argv){
 		  fclose(ambigfile);
 		  printf("\n. Printed out ambiguous states to %s\n",tree->mod->ambigfile);
 	  }else if(tree->mod->ambigprint){
-		  printf("\n. Can only print ambiguous characters with HLP16 model\n");
+		  printf("\n. Can only print ambiguous characters with HLP17 model\n");
 	  }
 
       tree->br_len_invar_set = NO;
@@ -230,20 +236,8 @@ int main(int argc, char **argv){
 	  else if(tree->mod->s_opt->opt_topo){
 	    if(tree->mod->s_opt->topo_search      == NNI_MOVE) Simu_Loop(tree);
 	    else if(tree->mod->s_opt->topo_search == SPR_MOVE){
-	  	  if(io->mod->whichrealmodel == HLP16 && tree->mod->s_opt->opt_topo){
-	  	    printf("\n. SPR topology search isn't supported with HLP16 right now. Sorry.");
-	  	    printf("\n. This is pretty high on the priority list, but feel free to complain to Ken about it. Maybe he'll do it faster.");
-	  	    printf("\n. In the meantime, try doing the topology search with the GY model, and then using that tree with HLP16 (see manual).\n\n");
-	  	    exit(EXIT_FAILURE);
-	  	  }
 	  	  Speed_Spr_Loop(tree);
 	    }else{
-	      if(io->mod->whichrealmodel == HLP16 && tree->mod->s_opt->opt_topo){
-	  	    printf("\n. SPR topology search isn't supported with HLP16 right now. Sorry.");
-	  	    printf("\n. This is pretty high on the priority list, but feel free to complain to Ken about it. Maybe he'll do it faster.");
-	  	    printf("\n. In the meantime, try doing the topology search with the GY model, and then using that tree with HLP16 (see manual).\n\n");
-	  	    exit(EXIT_FAILURE);
-	  	  }
 	    	Best_Of_NNI_And_SPR(tree);
 	    }
 	  }else{
@@ -261,11 +255,9 @@ int main(int argc, char **argv){
 	  Get_Tree_Size(tree);
 	  PhyML_Printf("\n. Log-likelihood of the current tree:\t\t\t\t%.2f\n",tree->c_lnL);
 	  
-	  if(tree->mod->whichrealmodel==HLP16)Update_Ancestors_Edge(io->tree->noeud[io->tree->mod->startnode],io->tree->noeud[io->tree->mod->startnode]->v[0],io->tree->noeud[io->tree->mod->startnode]->b[0],tree);
-	  else if(tree->io->datatype==NT)
-	  {
-	    PhyML_Printf("\n.... Codon Log-likelihood (equivalent):\t\t\t\t%.2f\n",tree->c_lnL);
-	  }  
+	  if(tree->mod->whichrealmodel==HLP17){
+		  Update_Ancestors_Edge(io->tree->noeud[io->tree->mod->startnode],io->tree->noeud[io->tree->mod->startnode]->v[0],io->tree->noeud[io->tree->mod->startnode]->b[0],tree);
+	  }
 	  
 	  /* Print the tree estimated using the current random (or BioNJ) starting tree */
 	  if(io->mod->s_opt->n_rand_starts > 1){
@@ -283,8 +275,6 @@ int main(int argc, char **argv){
 	    most_likely_size = Get_Tree_Size(tree);
 	  }
 	    
-	  /* 		  JF(tree); */
-
 	  #if defined OMP || defined BLAS_OMP
 	    
 	  t_end=omp_get_wtime();
@@ -340,13 +330,12 @@ int main(int argc, char **argv){
  
 	PhyML_Fprintf(io->fp_out_tree,"%s\n",most_likely_tree);
 	  
-	if(io->fp_out_compare) //!< Added by Marcelo.
-	{
+	if(io->fp_out_compare){ //!< Added by Marcelo.
 	  fprintf(io->fp_out_compare,"%s\n",most_likely_tree);
 	}
 	  
 	if(io->n_trees > 1 && io->n_data_sets > 1) break;
-      }
+      }//for(num_tree=(io->n_trees == 1)?(0):(num_data_set);num_tree < io->n_trees;num_tree++)
       Free_Cseq(cdata);
     }else{
       PhyML_Printf("\n. No data was found.\n");
@@ -372,7 +361,10 @@ int main(int argc, char **argv){
   if(io->fp_out_tree)    fclose(io->fp_out_tree);
   if(io->fp_out_trees)   fclose(io->fp_out_trees);
   if(io->fp_out_stats)   fclose(io->fp_out_stats);
-  if(io->print_trace)    fclose(io->fp_out_trace); //!< Added by Marcelo.
+  if(io->print_trace){
+	  fclose(io->fp_out_tree_trace);
+	  fclose(io->fp_out_stats_trace);
+  }
   if(io->fp_out_ps)      fclose(io->fp_out_ps); //!< Added by Marcelo.
   if(io->fp_out_compare) fclose(io->fp_out_compare); //!< Added by Marcelo.
 	

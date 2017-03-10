@@ -1,5 +1,11 @@
 /*
- 
+ IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
+
  codonPHYML: a program that  computes maximum likelihood phylogenies from
  CODON homologous sequences.
  
@@ -1515,8 +1521,8 @@ phydbl Update_Qmat_Codons(model *mod, int cat, int modeli) {
         case YAP:
             Update_Qmat_YAP(mat, qmat, freqs, cat, mod);
             break;
-        case HLP16:
-            Update_Qmat_HLP16(mat, qmat, freqs, cat, mod,mod->omega_part[modeli]);
+        case HLP17:
+            Update_Qmat_HLP17(mat, qmat, freqs, cat, mod,mod->omega_part[modeli]);
             break;
         default:
             break;
@@ -1537,7 +1543,7 @@ phydbl Update_Qmat_Codons(model *mod, int cat, int modeli) {
     }
 
     //Added by Ken - normalizes matrix here.
-    if(mod->whichrealmodel == HLP16){
+    if(mod->whichrealmodel == HLP17){
       For(i, numSensecodons) {
         For(j, numSensecodons) {
     		qmat[numSensecodons*i+j] = qmat[numSensecodons*i+j]/mu;
@@ -1579,7 +1585,7 @@ void Update_Qmat_GY(phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *m
 
 //Modified GY94 by Ken
 //Modified to be omega*kappa*pi*(1+b*h) on 12/Jun/2016
-void Update_Qmat_HLP16(phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod,phydbl omega) {
+void Update_Qmat_HLP17(phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod,phydbl omega) {
 	 int fi,ti,li,ri,hot,c;
 	 double htotal[mod->nmotifs];
 	 for(fi=0;fi<61;fi++){ //Fill in B matrix
@@ -1590,23 +1596,15 @@ void Update_Qmat_HLP16(phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model
     		for(li=0;li<61;li++){
     			for(ri=0;ri<61;ri++){
     				for(c=0;c< mod->nmotifs;c++){ //tally up expected number of each type of hotspot mutation
-    					if(mod->hmode==HDISCRETE){
     						htotal[c] += freqs[li]*freqs[ri]*mod->hotspotcmps[c][fi*61*61*61+ti*61*61+li*61+ri];
-	 	    			}
 	 	    		}
-	 	    	}
+    			}
 	 	    }
-
             //additive interaction function
             double hot = 0;
-          	if(mod->hmode==HDISCRETE){
            		for(c=0;c<mod->nmotifs;c++){
                		hot += htotal[c]*mod->hotness[mod->motif_hotness[c]];
            		}
-          	}else{
-          		hot=htotal[0];
-          	}
-
             //constrain total modification to never go below -1
             if(hot < -1){
               	hot=-1;
@@ -1620,7 +1618,7 @@ void Update_Qmat_HLP16(phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model
     numSensecodons = mod->ns;
     For(i, numSensecodons) {
         For(j, i) {
-            value = mat[i*numSensecodons+j] * Kappa_Omega_Factor(i, j, mod, cat,omega);
+            	value = mat[i*numSensecodons+j] * Kappa_Omega_Factor(i, j, mod, cat,omega);
               qmat[ i*numSensecodons+j ] = value * freqs[j]*(1+mod->Bmat[ i*numSensecodons+j ]);
               qmat[ j*numSensecodons+i ] = value * freqs[i]*(1+mod->Bmat[ j*numSensecodons+i ]);
         }

@@ -1,4 +1,10 @@
 /*
+ IgPhyML: a program that computes maximum likelihood phylogenies under
+ non-reversible codon models designed for antibody lineages.
+
+ Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+ built upon
  
  codonPHYML: a program that  computes maximum likelihood phylogenies from
  CODON homologous sequences.
@@ -90,132 +96,95 @@ void Usage()
     
     PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t-b (or --bootstrap) %sint%s\n",BOLD,LINE,FLAT);
+   /* PhyML_Printf("%s\n\t-b (or --bootstrap) %sint%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%sint%s >  0: %sint%s is the number of bootstrap replicates.\n",LINE,FLAT,LINE,FLAT);
     PhyML_Printf("\t\t%sint%s =  0: neither approximate likelihood ratio test nor bootstrap values are computed.\n",LINE,FLAT);
     PhyML_Printf("\t\t%sint%s = -1: approximate likelihood ratio test returning aLRT statistics.\n",LINE,FLAT);
     PhyML_Printf("\t\t%sint%s = -2: approximate likelihood ratio test returning Chi2-based parametric branch supports.\n",LINE,FLAT);
-    /*   PhyML_Printf("\t\t%sint%s = -3 : minimum of Chi2-based parametric and SH-like branch supports.\n",LINE,FLAT); */
+    //   PhyML_Printf("\t\t%sint%s = -3 : minimum of Chi2-based parametric and SH-like branch supports.\n",LINE,FLAT);
     PhyML_Printf("\t\t%sint%s = -4: (default) SH-like branch supports alone.\n",LINE,FLAT);
     PhyML_Printf("\t\t%sint%s = -5: approximate Bayes (aBayes) support.\n",LINE,FLAT);
-    PhyML_Printf("\n");
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("%s\n\t-m (or --model) %smodel%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%smodel%s : substitution model name.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%s- %sNucleotide%s based models : %sHKY85%s (default) | %sJC69%s | %sK80%s | %sF81%s | %sF84%s | %sTN93%s | %sGTR%s | %scustom (*)%s\n",
-                 FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);
-    PhyML_Printf("\t\t  (*) : For the custom option, a string of six digits identifies the model. For instance, 000000\n");
-    PhyML_Printf("\t\t        corresponds to F81 (or JC69 provided the distribution of nucleotide frequencies is uniform).\n");
-    PhyML_Printf("\t\t        012345 corresponds to GTR. This option can be used for encoding any model that is a nested\n");
-    PhyML_Printf("\t\t        within GTR.\n");
     PhyML_Printf("\n");
-    PhyML_Printf("\t\t%s- %sAmino-acid%s based models : %sLG%s (default) | %sWAG%s | %sJTT%s | %sMtREV%s | %sDayhoff%s | %sDCMut%s | %sRtREV%s | %sCpREV%s | %sVT%s\n",	 
-                 FLAT,LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT);
-    PhyML_Printf("\t\t                            %sBlosum62%s | %sMtMam%s | %sMtArt%s | %sHIVw%s |  %sHIVb%s | %scustom (*)%s\n",
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT,
-                 LINE,FLAT);
-    PhyML_Printf("\t\t  (*) : For the custom option, a file is requested that contains the symmetric part of the rate matrix, as \n");
-    PhyML_Printf("\t\t        well as the equilibrium amino-acid frequencies.  The format of the file is described in the manual\n");
-    PhyML_Printf("\n");
-    PhyML_Printf("\t\t%s- %sCodon%s based models:%s HLP16%s | %sGY%s (default) | %sMG%s | %sYAP%s | %sPCM%s\n",FLAT,LINE,FLAT,LINE,FLAT,
-                 LINE,FLAT,
+    PhyML_Printf("\t\t%s- %sCodon%s based models:%s HLP17%s | %sGY%s (default)\n",FLAT,LINE,FLAT,LINE,FLAT,
                  LINE,FLAT,
                  LINE,FLAT);
     
-    PhyML_Printf("\n");
+  /*  PhyML_Printf("\n");
     PhyML_Printf("%s\n\t--qrates %sratematrix%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\tThis option sets an initial rate matrix to create semiempirical codon models.\n");
     PhyML_Printf("\t\tIt only has an effect if a codon model is used.\n"); 
-    PhyML_Printf("\t\t%sratematrix%s = %sKOSI07%s | %sSCHN05%s | %sECMUSR%s\n",LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);
+    PhyML_Printf("\t\t%sratematrix%s = %sKOSI07%s | %sSCHN05%s | %sECMUSR%s\n",LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);*/
 
 //    PhyML_Printf("\n");
 //    PhyML_Printf("\tFor more information on model definition see the manual\n");
 //    PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t-f (or --frequencies) %sempirical%s, %smodel%s, %soptimized%s, %sfT,fC,fA,fG%s, %sfT1,fC1,fA1,fG1,fT2,fC2,fA2,fG2,fT3,fC3,fA3,fG3%s\n",
-                 BOLD,LINE,BOLD,LINE,FLAT,LINE,FLAT,LINE,FLAT);
+    PhyML_Printf("%s\n\t-f (or --frequencies) %sempirical%s, %smodel%s, %soptimized%s, %sfT,fC,fA,fG%s,\n\t\t%sfT1,fC1,fA1,fG1,fT2,fC2,fA2,fG2,fT3,fC3,fA3,fG3%s\n",
+                 BOLD,LINE,BOLD,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);
     PhyML_Printf("\t                       %sor%s %sfC1,fC2, ... ,fC64%s\n",BOLD,FLAT,LINE,FLAT);
-    PhyML_Printf("\t                       %sor%s %sfA,fR,fN,fD,fC,fQ,fE,fG,fH,fI,fL,fK,fM,fF,fP,fS,fT,fW,fY,fV%s\n",BOLD,FLAT,LINE,FLAT);
     
     PhyML_Printf("\t\t%sempirical%s : (default) the character frequencies are determined as follows: \n",LINE,FLAT);
-    PhyML_Printf("%s\t\t- %sNucleotide%s sequences: (Empirical) the equilibrium base frequencies are estimated by counting\n"
-                 "\t\t  the occurence of the different bases in the alignment.\n",FLAT,LINE,FLAT);
-    PhyML_Printf("%s\t\t- %sAmino-acid%s sequences: (Empirical) the equilibrium amino-acid frequencies are estimated by counting\n"
-                 "\t\t  the occurence of the different amino-acids in the alignment.\n",FLAT,LINE,FLAT);
     PhyML_Printf("%s\t\t- %sCodon%s sequences     : (Empirical) the equilibrium codon frequencies are estimated by counting\n"
                  "\t\t  the occurence of bases or codons in the alignment according to the frequency model that is selected.\n",FLAT,LINE,FLAT);
     PhyML_Printf("\n");
-    PhyML_Printf("\t\t%smodel%s : the character frequencies are determined as follows: \n",LINE,FLAT);
+    /*PhyML_Printf("\t\t%smodel%s : the character frequencies are determined as follows: \n",LINE,FLAT);
     PhyML_Printf("%s\t\t- %sAmino-acid%s sequences: (Model) the equilibrium amino-acid frequencies are estimated using\n"
                  "\t\t  the frequencies defined by the substitution model.\n",FLAT,LINE,FLAT);
     PhyML_Printf("%s\t\t- %sCodon%s sequences     : (Model) the equilibrium codon frequencies are estimated using\n"
                  "\t\t  the frequencies defined by the substitution model.\n",FLAT,LINE,FLAT);
-    PhyML_Printf("\n");		 
+    PhyML_Printf("\n");		*/
     PhyML_Printf("\t\t%soptimize%s : the character frequencies are determined as follows: \n",LINE,FLAT);
     PhyML_Printf("%s\t\t- %sNucleotide%s sequences: (ML) the equilibrium base frequencies are estimated using maximum likelihood \n",FLAT,LINE,FLAT);
     PhyML_Printf("%s\t\t- %sAmino-acid%s sequences: (ML) the equilibrium amino-acid frequencies are estimated using maximum likelihood\n",FLAT,LINE,FLAT);
     PhyML_Printf("%s\t\t- %sCodon%s sequences     : (ML) the equilibrium codon frequencies are estimated using maximum likelihood\n",FLAT,LINE,FLAT);
     
-    PhyML_Printf("\n");
-    PhyML_Printf("\t\t%s\"fT,fC,fA,fG\"%s : only valid for nucleotide models and codon models using the F1X4 frequency model. \n",LINE,FLAT);
+    /*PhyML_Printf("\n");
+    PhyML_Printf("\t\t%s\"fT,fC,fA,fG\"%s : only valid for codon models using the F1X4 frequency model. \n",LINE,FLAT);
     PhyML_Printf("\t\t  fA, fC, fG and fT are floating point numbers that correspond to the frequencies of A, C, G and T \n\t\t  respectively \n");
     PhyML_Printf("\t\t%s\"fT1,fC1,fA1,fG1,fT2,fC2,fA2,fG2,fT3,fC3,fA3,fG3\"%s : only valid for codon models using the F3X4 or\n",LINE,FLAT);
     PhyML_Printf("\t\t  CF3X4 frequency models.  In this case the numbers correspond to the frequencies of bases at different\n");
     PhyML_Printf("\t\t  positions in the codons.\n");
     PhyML_Printf("\t\t%s\"fC1,fC2, ... ,fC64\"%s : only valid for codon models using the F1XCODONS frequency model. In this case \n",LINE,FLAT);
     PhyML_Printf("\t\t  the numbers correspond to the frequencies of the different codons.\n");
-    PhyML_Printf("\t\t%s\"fA,fR,fN,fD,fC,fQ,fE,fG,fH,fI,fL,fK,fM,fF,fP,fS,fT,fW,fY,fV\"%s : only valid for amino acid models. In this case \n",LINE,FLAT);
-    PhyML_Printf("\t\t  the numbers correspond to the frequencies of the different amino acids.\n");
-    PhyML_Printf("\t\t(WARNING: do not use any blank space between your values of nucleotide, codon or amino acid frequencies, only commas!)\n");
+    PhyML_Printf("\t\t(WARNING: do not use any blank space between your values of nucleotide, codon or amino acid frequencies, only commas!)\n");*/
     
     
     PhyML_Printf("\n");
     PhyML_Printf("%s\n\t--fmodel %sfrequency model%s\n",BOLD,LINE,FLAT);
-    PhyML_Printf("\t\tOnly for codon models: Which frequency model to use.\n");
+    PhyML_Printf("\t\tWhich frequency model to use.\n");
     PhyML_Printf("\t\t%sfrequency model%s = %sF1XCODONS%s | %sF1X4%s | %sF3X4%s | %sCF3X4%s (default)\n",LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);
     
     PhyML_Printf("\n");
     
     PhyML_Printf("%s\n\t-t (or --ts/tv) %sts/tv_ratio%s\n",BOLD,LINE,FLAT);
-    PhyML_Printf("\t\tThis option sets the transition/transversion ratio. DNA sequences only (Nucleotide or Codon).\n");
-    PhyML_Printf("\t\t(This option has no effect if the model does not estimate the transition/transversion ratio)\n");
-    PhyML_Printf("%s\t\tIf you do not set this parameter, ts/tv will not be used.\n",BOLD);
+    PhyML_Printf("\t\tThis option sets the transition/transversion ratio.\n");
     PhyML_Printf("\t\t%sts/tv_ratio%s > 0: Set transition/transversion ratio to the value.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%sts/tv_ratio%s = e: Get maximum likelihood estimate of transition/transversion ratio.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%sts/tv_ratio%s = 1: Fix estimate (default).\n",LINE,FLAT);
-    PhyML_Printf("\n");
-    PhyML_Printf("\t\tIf the model is a semi-parametric codon model the parameter refers to the kappa(i,j) in Kosiol et al 2007:\n");
+    PhyML_Printf("\t\t%sts/tv_ratio%s = e: Get maximum likelihood estimate of transition/transversion ratio (default under HLP17).\n",LINE,FLAT);
+    PhyML_Printf("\t\t%sts/tv_ratio%s = 1: Fix estimate (default under GY94).\n",LINE,FLAT);
+    //PhyML_Printf("\n");
+    /*PhyML_Printf("\t\tIf the model is a semi-parametric codon model the parameter refers to the kappa(i,j) in Kosiol et al 2007:\n");
     PhyML_Printf("\t\t%sts/tv_ratio%s = KAP1: kappa(i,j) = 1\n",LINE,FLAT);
     PhyML_Printf("\t\t%sts/tv_ratio%s = KAP2: kappa(i,j) = K(nts) where nts is the number of transitions between codon i and j.\n",LINE,FLAT);
     PhyML_Printf("\t\t%sts/tv_ratio%s = KAP3: kappa(i,j) = K(ntv) where ntv is the number of transversions between codon i and j.\n",LINE,FLAT);
     PhyML_Printf("\t\t%sts/tv_ratio%s = KAP4: kappa(i,j) = K1(nts)K2(ntv) that is two different parameters.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%sts/tv_ratio%s = KAP5: kappa(i,j) = K(k) where k is one of 9 ts/tv combinations. \n",LINE,FLAT); 
+    PhyML_Printf("\t\t%sts/tv_ratio%s = KAP5: kappa(i,j) = K(k) where k is one of 9 ts/tv combinations. \n",LINE,FLAT);*/
     
     PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t-w (or --omega) %smodel%s (Required if a codon model other than HLP16 is used)%s\n",BOLD,LINE,BOLD,FLAT);
+    PhyML_Printf("%s\n\t-w (or --omega) %smodel%s (Required if a codon model other than HLP17 is used)%s\n",BOLD,LINE,BOLD,FLAT);
     PhyML_Printf("\t\tThe omega parameter or nonsynonymous/synonymous rate ratio.\n");
     PhyML_Printf("\n");
     PhyML_Printf("\t\t%smodel%s = DM0   : (default) Single omega model.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%smodel%s = DMODEL: Discrete unconstrained distribution model.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%smodel%s = DGAMMA: Discrete gamma model.\n",LINE,FLAT);
+   /* PhyML_Printf("\t\t%smodel%s = DMODEL: Discrete unconstrained distribution model.\n",LINE,FLAT);
+    PhyML_Printf("\t\t%smodel%s = DGAMMA: Discrete gamma model.\n",LINE,FLAT);*/
     
-    PhyML_Printf("\n");
+    //PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t--wvals %svalues%s\n",BOLD,LINE,FLAT);
+    /*PhyML_Printf("%s\n\t--wvals %svalues%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%svalues%s are the values for each omega category, separated by commas if more than one.\n",LINE,FLAT);
     PhyML_Printf("\t\tIf this option is set, omega values are not estimated by ML but fixed to these values.\n",LINE,FLAT);
     
@@ -223,9 +192,9 @@ void Usage()
     
     PhyML_Printf("%s\n\t--wclasses %snr of classes%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\tDefines the number of omega rate categories if DMODEL or DGAMMA is chosen as omega model.\n",LINE,FLAT);
-    PhyML_Printf("\t\tDefaults to 4 if DMODEL or DGAMMA is chosen.\n",LINE,FLAT);
+    PhyML_Printf("\t\tDefaults to 4 if DMODEL or DGAMMA is chosen.\n",LINE,FLAT);*/
     
-    PhyML_Printf("\n");
+    /*PhyML_Printf("\n");
     
     PhyML_Printf("%s\n\t-v (or --pinv) %sprop_invar%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%sprop_invar%s : proportion of invariable sites.\n",LINE,FLAT);
@@ -244,7 +213,7 @@ void Usage()
     PhyML_Printf("\t\t%salpha%s : distribution of the gamma distribution shape parameter.\n",LINE,FLAT);
     PhyML_Printf("\t\tCan be a fixed positive value or %se%s to get the maximum likelihood estimate. (default = e)\n",LINE,FLAT);
     
-    PhyML_Printf("\n");
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("%s\n\t-s (or --search) %smove%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\tTree topology search operation option.\n");
@@ -257,10 +226,10 @@ void Usage()
     
     PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t--dist_tree_model %smodel%s\n",BOLD,LINE,FLAT);
+    /*PhyML_Printf("%s\n\t--dist_tree_model %smodel%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\tThis option sets the codon model that is used to build the initial distance tree.\n");
     PhyML_Printf("\t\tThis option only has an effect if a codon model is used and no starting tree is provided.\n"); 
-    PhyML_Printf("\t\t%smodel%s = %sGYECMS05%s | %sGYECMK07%s (default) | %sJC69%s\n",LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);
+    PhyML_Printf("\t\t%smodel%s = %sGYECMS05%s | %sGYECMK07%s (default) | %sJC69%s\n",LINE,FLAT,LINE,FLAT,LINE,FLAT,LINE,FLAT);*/
     
     PhyML_Printf("\n");
     
@@ -275,7 +244,7 @@ void Usage()
     
     PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t--rand_start%s\n",BOLD,FLAT);
+   /* PhyML_Printf("%s\n\t--rand_start%s\n",BOLD,FLAT);
     PhyML_Printf("\t\tThis option sets the initial tree to random.\n");
     PhyML_Printf("\t\tIt is only valid if SPR searches are to be performed.\n");
     
@@ -291,7 +260,7 @@ void Usage()
     PhyML_Printf("\t\t%snum%s is the seed used to initiate the random number generator.\n",LINE,FLAT);
     PhyML_Printf("\t\tMust be an integer.\n");
     
-    PhyML_Printf("\n");
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("%s\n\t--run_id %sID_string%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%sAppend the string %sID_string%s at the end of each PhyML output file.\n",FLAT,LINE,FLAT);
@@ -299,7 +268,7 @@ void Usage()
     
     PhyML_Printf("\n");
     
-    PhyML_Printf("%s\n\t--quiet%s\n",BOLD,FLAT);
+    /*PhyML_Printf("%s\n\t--quiet%s\n",BOLD,FLAT);
     PhyML_Printf("\t\t%sNo interactive questions (for running in batch mode).\n",FLAT);
     
     PhyML_Printf("\n");
@@ -307,13 +276,13 @@ void Usage()
     PhyML_Printf("%s\n\t--version%s\n",BOLD,FLAT);
     PhyML_Printf("\t\t%sPrint the version and exit.\n",FLAT);
     
-    PhyML_Printf("\n");
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("%s\n\t-h (or --help)%s\n",BOLD,FLAT);
     PhyML_Printf("\t\t%sShow this help message and exit.\n",FLAT);
 
     PhyML_Printf("\n");
-
+/*
     PhyML_Printf("%s\n\t--oformat %soption%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%sDefines the output format. Possible values are:\n", FLAT);   
     PhyML_Printf("\t\t%stxt%s (text format, default)\n", LINE, FLAT);
@@ -336,16 +305,16 @@ void Usage()
     
     PhyML_Printf("\n");
     
-   PhyML_Printf("%s\n\t--logtree %soption%s\n",BOLD,LINE,FLAT);
+    PhyML_Printf("%s\n\t--logtree %soption%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%soption%s can be 1 (no tree log), 1 (log current tree to disc) or 2 (log all 'best trees' to disc).\n",LINE,FLAT);
     
-    PhyML_Printf("\n"); 
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("\n");
     
     PhyML_Printf("\n\t%sNot so common options:%s\n",BOLD,FLAT);
     
-    PhyML_Printf("%s\n\t-p (or --pars)%s\n",BOLD,FLAT);
+    /*PhyML_Printf("%s\n\t-p (or --pars)%s\n",BOLD,FLAT);
     PhyML_Printf("%s\t\tUse a minimum parsimony starting tree. This option is taken into account when the '-u' option\n",FLAT);
     PhyML_Printf("%s\t\tis absent and when tree topology modifications are to be done.\n",FLAT);
     
@@ -360,15 +329,15 @@ void Usage()
     PhyML_Printf("\t\t%sThe middle of each substitution rate class in the discrete gamma distribution\n",FLAT);
     PhyML_Printf("\t\t%sis taken as the median.  The mean is used by default.\n",FLAT);
     
-    PhyML_Printf("\n");
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("%s\n\t--expm %smethod%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\tThis option sets the method to use for matrix exponentiation.\n");
-    PhyML_Printf("\t\t%smethod%s = EIGEN : (default) Use eigenvalue decomposition (preferable for reversible models).\n",LINE,FLAT);
-    PhyML_Printf("\t\t%smethod%s = SSPADE: Pade approximation.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%smethod%s = TAYLOR: Use Taylor expansion (fast, but inaccurate).\n",LINE,FLAT);
+    PhyML_Printf("\t\t%smethod%s = EIGEN : (default for GY94) Use eigenvalue decomposition (preferable for reversible models).\n",LINE,FLAT);
+    PhyML_Printf("\t\t%smethod%s = SSPADE: (default for HLP17) Pade approximation.\n",LINE,FLAT);
+    //PhyML_Printf("\t\t%smethod%s = TAYLOR: Use Taylor expansion (fast, but inaccurate).\n",LINE,FLAT);
     
-    PhyML_Printf("\n");
+    /*PhyML_Printf("\n");
     
     PhyML_Printf("%s\n\t--testCond%s\n",BOLD,FLAT);
     PhyML_Printf("\t\tCalculate the condition of the matrix\n");
@@ -395,13 +364,13 @@ void Usage()
     PhyML_Printf("\t\t%scode%s = CHMC : Chlorophycean Mitochondrial.\n",LINE,FLAT);
     PhyML_Printf("\t\t%scode%s = TRMC : Trematode Mitochondrial.\n",LINE,FLAT);
     PhyML_Printf("\t\t%scode%s = SCOMC : Scenedesmus obliquus mitochondrial.\n",LINE,FLAT);
-    PhyML_Printf("\t\t%scode%s = THMC : Thraustochytrium Mitochondrial.\n",LINE,FLAT);
+    PhyML_Printf("\t\t%scode%s = THMC : Thraustochytrium Mitochondrial.\n",LINE,FLAT);*/
     
     PhyML_Printf("\n");
     
     
     
-    PhyML_Printf("%s\n\t--NT2AA%s\n",BOLD,FLAT);
+    /*PhyML_Printf("%s\n\t--NT2AA%s\n",BOLD,FLAT);
     PhyML_Printf("\t\tConvert nucleotide input sequences to amino acid sequences.\n");
     
     PhyML_Printf("\n");
@@ -409,13 +378,13 @@ void Usage()
     PhyML_Printf("%s\n\t--print_site_lnl%s\n",BOLD,FLAT);
     PhyML_Printf("\t\t%sPrint the likelihood for each site in file %s*_phyml_lk.txt%s.\n\t\tNot implemented for codon models (yet).\n",FLAT,LINE,FLAT);
     
-    PhyML_Printf("\n");
+    PhyML_Printf("\n");*/
     
     PhyML_Printf("%s\n\t--print_trace%s\n",BOLD,FLAT);
     PhyML_Printf("\t\t%sPrint each phylogeny explored during the tree search process\n",FLAT);
     PhyML_Printf("\t\t%sin file %s*_phyml_trace.txt%s.\n",FLAT,LINE,FLAT);
     
-    PhyML_Printf("\n");
+    /*PhyML_Printf("\n");
     
     PhyML_Printf("%s\n\t--append%s\n",BOLD,FLAT);
     PhyML_Printf("\t\tAppend to files that already exist, instead of rewriting.\n");
@@ -483,8 +452,8 @@ void Usage()
     PhyML_Printf("%s\n\t--optBrent %scycles%s\n",BOLD,LINE,FLAT);
     PhyML_Printf("\t\t%scycles%s specifies the number of times Brent algorithm will be executed during an optimization turn.\n",LINE,FLAT);
     PhyML_Printf("\t\t(default = 2). Differently from BFGS, the Brent algorithm does single parameter optimization.\n",LINE,FLAT);
-    
-    PhyML_Printf("%s\n\nNOTE: USE OF OPTIONS OTHER THAN THOSE SPECIFIED IN THE IGPHYML MANUAL IS NOT CURRENTLY SUPPORTED.\n\n",FLAT,BOLD,FLAT);
+    */
+    PhyML_Printf("%s\n\n\t\tNote: Use of options other than those here isn't yet supported in IgPhyML.\n\n",FLAT,BOLD,FLAT);
 
     PhyML_Printf("\n");
     

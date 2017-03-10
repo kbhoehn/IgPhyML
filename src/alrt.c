@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -134,13 +140,6 @@ int Check_NNI_Five_Branches(t_tree *tree)
 	      }
 	    }
 	}
-
-//       if((tree->c_lnL < init_lnL - tree->mod->s_opt->min_diff_lk_local) || (tree->c_lnL > init_lnL + tree->mod->s_opt->min_diff_lk_local))
-// 	{
-// 	  PhyML_Printf("\n\n. tree->c_lnL = %f init_lnL = %f.",tree->c_lnL,init_lnL);
-// 	  PhyML_Printf("\n. Err in file %s at line %d\n\n.\n",__FILE__,__LINE__);
-// 	  Warn_And_Exit("\n");
-// 	}
 
       //Don't do any NNI if the user doesn't want to optimize topology
       if(!tree->mod->s_opt->opt_topo) better_found = 0;
@@ -536,13 +535,6 @@ int NNI_Neigh_BL(t_edge *b_fcus, t_tree *tree)
 			   
 			   Update_P_Lk(tree,b_fcus,b_fcus->rght);
 			   
-			   
-// 			   if(lk_temp < lk1 - tree->mod->s_opt->min_diff_lk_local)
-// 			   {
-// 			     PhyML_Printf("\n. lk_temp = %f lk1 = %f\n",lk_temp,lk1);
-// 			     PhyML_Printf("\n. Err in file %s at line %d\n\n",__FILE__,__LINE__);
-// 			     Warn_And_Exit("");
-// 			   }
   }
   while(FABS(lk_temp-lk1) > tree->mod->s_opt->min_diff_lk_global);
   //until no significative improvement is detected
@@ -649,12 +641,6 @@ int NNI_Neigh_BL(t_edge *b_fcus, t_tree *tree)
 			   
 			   Update_P_Lk(tree,b_fcus,b_fcus->rght);
 			   
-// 			   if(lk_temp < lk2 - tree->mod->s_opt->min_diff_lk_local)
-// 			   {
-// 			     PhyML_Printf("\n. lk_temp = %f lk2 = %f\n",lk_temp,lk2);
-// 			     PhyML_Printf("\n. Err in file %s at line %d\n\n",__FILE__,__LINE__);
-// 			     Warn_And_Exit("");
-// 			   }
   }
   while(FABS(lk_temp-lk2) > tree->mod->s_opt->min_diff_lk_global);
   //until no significative improvement is detected
@@ -754,16 +740,7 @@ int NNI_Neigh_BL(t_edge *b_fcus, t_tree *tree)
     if(b_fcus->nni->lk1 > b_fcus->nni->lk2) result = 5; //lk0 > lk1 > lk2
       else                                  result = 6; //lk0 > lk2 > lk1
   }
-  
-  /*   int counter=0; */
-  /*   For(site,n_patterns) */
-  /*     { */
-  /*       PhyML_Printf("%3d %3d %15f ",b_fcus->num,tree->data->wght[site],b_fcus->nni->score); */
-  /*       PhyML_Printf("%15f %15f\n", */
-  /* 	     tree->log_lks_aLRT[0][counter], */
-  /* 	     (lk1 > lk2)?(tree->log_lks_aLRT[1][counter]):(tree->log_lks_aLRT[2][counter])); */
-  /*       counter+=tree->data->wght[site]; */
-  /*     } */
+
   return result;
 }
 
@@ -920,15 +897,6 @@ void Make_Target_Swap(t_tree *tree, t_edge *b_fcus, int swaptodo)
     }
   while(FABS(lk_temp-lktodo) > tree->mod->s_opt->min_diff_lk_global);
   //until no significative improvement is detected
-
-
-/*   PhyML_Printf("\n.<< [%3d] l=%f lk_init=%f tree->c_lnL=%f score=%12f v1=%3d v2=%3d v3=%3d v4=%3d >>", */
-/* 	 b_fcus->num, */
-/* 	 b_fcus->l, */
-/* 	 lk_init, */
-/* 	 tree->c_lnL, */
-/* 	 lk_init-tree->c_lnL, */
-/* 	 v1->num,v2->num,v3->num,v4->num);       */
 
 
   if(tree->c_lnL < lk_init+0.1*lk_init) //! Added by Marcelo: only crashes if differs more than 10%

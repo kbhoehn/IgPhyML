@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -99,7 +105,7 @@ void Best_Spr(t_tree *tree);
 int Check_Spr_Move_Validity(spr *this_spr_move, t_tree *tree);
 void Spr_Subtree(t_edge *b, t_node *link, t_tree *tree);
 void Spr_Pars(t_tree *tree);
-
+void Print_Trace(t_tree *tree); //Added by Ken 9/2/2017
 
 
 #endif  /* _SPR_H_ */

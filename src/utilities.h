@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -225,7 +231,8 @@ static inline int isinf_ld (long double x) { return isnan (x - x); }
 /* #define  P_LK_LIM_SUP   4.611686e+18 /\* 2^62 *\/ */
 
 /* Uncomment the line below to switch to double precision */
-typedef	double phydbl;
+//typedef	double phydbl;
+typedef  double phydbl;
 #define LOG log
 #define POW pow
 #define EXP exp
@@ -740,21 +747,25 @@ typedef struct __Model {
  int		partfilespec; //=1 if partfile specified
 
 
-// int		*hotspots;
  phydbl		**hotspotcmps; //hotspot comparison tables
+ phydbl		*aacmps; //AA exchangeability matrix comparison
+ phydbl		aaintercept;
+ phydbl 	aaslope;
+ char*		aamodel;
  int		opthotness;
  char		*rootname;
  char		*motifstring;
  char		*hotnessstring;
  int		startnode;
+ int 		slowSPR;
 
  phydbl		**rootStates; //61xlength matrix of 1s and 0s describing the character state at the root
 
  //added by Ken 19/9
  phydbl		hintercept;
- phydbl		hhotspot;
- phydbl 	hcoldspot;
+ phydbl		hslope;
  int		hmode;
+ int		omode;
 
  int		motifstringopt;
  int		hotnessstringopt;
@@ -762,6 +773,8 @@ typedef struct __Model {
 
  int		ambigprint;
  char		*ambigfile;
+
+ phydbl 	stretch; //stretch branch lengths of initial tree
 
 }model;
 
@@ -818,8 +831,15 @@ typedef struct __Option {
   FILE                 *fp_out_stats;
   int               out_stats_format;
 
-  char               *out_trace_file; /*!< name of the file in which the likelihood of the model is written. */
-  FILE                 *fp_out_trace;
+  //char               *out_trace_file; /*!< name of the file in which the likelihood of the model is written. */
+  //FILE                 *fp_out_trace;
+
+  char               *out_trace_tree_file; /*!< name of the file in which the likelihood of the model is written. */
+  FILE                 *fp_out_tree_trace;
+
+  char               *out_trace_stats_file; /*!< name of the file in which the likelihood of the model is written. */
+  FILE                 *fp_out_stats_trace;
+  int					tracecount;
 
   char                  *out_lk_file; /*!< name of the file in which the likelihood of the model is written. */
   FILE                    *fp_out_lk;
@@ -1643,7 +1663,7 @@ void Set_Genetic_Code(int gencode);
 #define MG -2
 #define YAP -3
 #define PCM -4
-#define HLP16 -100 //added by Ken
+#define HLP17 -100 //added by Ken
 
 /*! Opt freq scheme */ //!
 #define NOFEQ     -1

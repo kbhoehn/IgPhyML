@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -69,7 +75,7 @@ void PadeApprox(int n, int nn, phydbl *A, model *mod, phydbl *F, int pos, phydbl
 
 // stefan:
 phydbl Update_Qmat_Codons(model *mod, int cat, int modeli);
-void Update_Qmat_HLP16( phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod,phydbl omega);
+void Update_Qmat_HLP17( phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod,phydbl omega);
 void Update_Qmat_GY( phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod);
 void Update_Qmat_MG( phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod);
 void Update_Qmat_YAP( phydbl *mat, phydbl *qmat, phydbl * freqs, int cat, model *mod);

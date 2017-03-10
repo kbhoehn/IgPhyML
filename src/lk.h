@@ -1,6 +1,12 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
 
-	codonPHYML: a program that  computes maximum likelihood phylogenies from
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
+
+codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
 
 Copyright (C) Marcelo Serrano Zanetti. Oct 2010 onward.
@@ -36,6 +42,7 @@ void Get_All_Partial_Lk_Scale(t_tree *tree,t_edge *b_fcus,t_node *a,t_node *d);
 void Post_Order_Lk(t_node *pere, t_node *fils, t_tree *tree);
 void Pre_Order_Lk(t_node *pere, t_node *fils, t_tree *tree);
 phydbl Lk(t_tree *tree);
+void upAllPmats(t_tree *tree);
 
 //Added by Ken 3/8/2016
 void Post_Order_Lk_IrrevPulley(t_node *pere, t_node *fils, t_tree *tree);

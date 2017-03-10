@@ -1,4 +1,10 @@
 /*
+ IgPhyML: a program that computes maximum likelihood phylogenies under
+ non-reversible codon models designed for antibody lineages.
+
+ Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+ built upon
  
  codonPHYML: a program that  computes maximum likelihood phylogenies from
  CODON homologous sequences.
@@ -492,21 +498,45 @@ char *Write_Tree(t_tree *tree)
   tree->e_root = NULL;
 #endif
   
-  if(!tree->n_root)
-  {
-    i = 0;
-    while((!tree->noeud[tree->n_otu+i]->v[0]) ||
-          (!tree->noeud[tree->n_otu+i]->v[1]) ||
-          (!tree->noeud[tree->n_otu+i]->v[2])) i++;
-    
-    R_wtree(tree->noeud[tree->n_otu+i],tree->noeud[tree->n_otu+i]->v[0],&available,&s,&pos,tree);
-    R_wtree(tree->noeud[tree->n_otu+i],tree->noeud[tree->n_otu+i]->v[1],&available,&s,&pos,tree);
-    R_wtree(tree->noeud[tree->n_otu+i],tree->noeud[tree->n_otu+i]->v[2],&available,&s,&pos,tree);
-  }
-  else
-  {
-    R_wtree(tree->n_root,tree->n_root->v[0],&available,&s,&pos,tree);
-    R_wtree(tree->n_root,tree->n_root->v[1],&available,&s,&pos,tree);
+  if(tree->mod->whichrealmodel == HLP17){ //added by Ken 16/2/2017 to output as a tree ith rooted branch length of zero
+	  t_node* r = Make_Node_Light(-1);
+	  tree->noeud[tree->mod->startnode]->v[1] = r;
+	  t_edge* blank = (t_edge *)mCalloc(1,sizeof(t_edge));
+	  blank->l=0.00001;
+	  blank->left=tree->noeud[tree->mod->startnode];
+	  blank->rght=r;
+	  tree->noeud[tree->mod->startnode]->b[1] = blank;
+	  r->b[0] = blank;
+	  r->tax=1;
+	  tree->n_root=r;
+	  tree->e_root=blank;
+	  tree->n_root_pos=tree->mod->startnode;
+	  r->name = (char*)mCalloc(T_MAX_OPTION,sizeof(char*));
+	  strcpy(r->name,tree->noeud[tree->mod->startnode]->name);
+	  R_wtree(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],&available,&s,&pos,tree);
+	  R_wtree(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[1],&available,&s,&pos,tree);
+
+	  free(r);
+	  free(r->name);
+	  free(blank);
+	  tree->noeud[tree->mod->startnode]->b[1]=NULL;
+	  tree->noeud[tree->mod->startnode]->v[1]=NULL;
+	  tree->n_root=NULL;
+	  tree->e_root=NULL;
+  }else{
+	  if(!tree->n_root){
+	  i = 0;
+    	while((!tree->noeud[tree->n_otu+i]->v[0]) ||
+    		(!tree->noeud[tree->n_otu+i]->v[1]) ||
+			(!tree->noeud[tree->n_otu+i]->v[2])) i++;
+
+    	R_wtree(tree->noeud[tree->n_otu+i],tree->noeud[tree->n_otu+i]->v[0],&available,&s,&pos,tree);
+    	R_wtree(tree->noeud[tree->n_otu+i],tree->noeud[tree->n_otu+i]->v[1],&available,&s,&pos,tree);
+    	R_wtree(tree->noeud[tree->n_otu+i],tree->noeud[tree->n_otu+i]->v[2],&available,&s,&pos,tree);
+  	  }else{
+  		R_wtree(tree->n_root,tree->n_root->v[0],&available,&s,&pos,tree);
+    	R_wtree(tree->n_root,tree->n_root->v[1],&available,&s,&pos,tree);
+  	  }
   }
   
   s[pos-1]=')';
@@ -528,71 +558,50 @@ void R_wtree(t_node *pere, t_node *fils, int *available, char **s_tree, int *pos
     /*       printf("\n- Writing on %p",*s_tree); */
     ori_len = *pos;
     
-    if(OUTPUT_TREE_FORMAT == 0)
-    {
-      if(tree->io->long_tax_names) 
-	    {
+    if(OUTPUT_TREE_FORMAT == 0){
+      if(tree->io->long_tax_names){
 	      strcat(*s_tree,tree->io->long_tax_names[fils->num]);
 	      (*pos) += (int)strlen(tree->io->long_tax_names[fils->num]);
-	    }
-      else
-	    {
+	    }else{
 	      strcat(*s_tree,fils->name);
 	      (*pos) += (int)strlen(fils->name);
 	    }		  
     }
-    else
-    {
+    else{
       (*pos) += sprintf(*s_tree+*pos,"%d",fils->num+1);
     }
-    
-    if((fils->b) && (fils->b[0]) && (fils->b[0]->l > -1.))
-    {
-      if(tree->print_labels)
-	    {
+    if((fils->b) && (fils->b[0]) && (fils->b[0]->l > -1.)){
+      if(tree->print_labels){
 	      if(fils->b[0]->n_labels < 10)
-          For(i,fils->b[0]->n_labels) 
-        {
+          For(i,fils->b[0]->n_labels){
           (*pos) += sprintf(*s_tree+*pos,"#%s",fils->b[0]->labels[i]);
-        }
-	      else
-        {
-          (*pos) += sprintf(*s_tree+*pos,"#%d_labels",fils->b[0]->n_labels);
-        }
+	      }else{
+	    	  (*pos) += sprintf(*s_tree+*pos,"#%d_labels",fils->b[0]->n_labels);
+	      }
 	    }
       
       strcat(*s_tree,":");
       (*pos)++;
       
 #ifndef MC
-      if(!tree->n_root)
-	    {
+      if(!tree->n_root){
 	      (*pos) += sprintf(*s_tree+*pos,"%.10f",fils->b[0]->l);
-	    }
-      else
-	    {
-	      if(pere == tree->n_root)
-        {
-          phydbl root_pos = (fils == tree->n_root->v[0])?(tree->n_root_pos):(1.-tree->n_root_pos);
-          (*pos) += sprintf(*s_tree+*pos,"%.10f",tree->e_root->l * root_pos);
-        }
-	      else
-        {
+	    }else{
+	      if(pere == tree->n_root){
+	    	  phydbl root_pos = (fils == tree->n_root->v[0])?(tree->n_root_pos):(1.-tree->n_root_pos);
+	    	  (*pos) += sprintf(*s_tree+*pos,"%.10f",tree->e_root->l * root_pos);
+	      }else{
           (*pos) += sprintf(*s_tree+*pos,"%.10f",fils->b[0]->l);
-        }
+	      }
 	    }		
 #else
-      if(!tree->n_root)
-	    {
+      if(!tree->n_root){
 	      (*pos) += sprintf(*s_tree+*pos,"%.10f",fils->b[0]->l);
-	    }
-      else
-	    {
+	    }else{
 	      (*pos) += sprintf(*s_tree+*pos,"%.10f",tree->rates->cur_l[fils->num]);
 	    }
 #endif
     }
-    
     strcat(*s_tree,",");
     (*pos)++;
     
@@ -2516,7 +2525,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
   	//      	  int n_edges=2*tree->n_otu-3;
   	//      	  For(br,n_edges) Update_PMat_At_Given_Edge(tree->t_edges[br],tree);
   	//      Get_UPP(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);
- /* if(tree->mod->whichrealmodel == HLP16){
+ /* if(tree->mod->whichrealmodel == HLP17){
 	  if(b_fcus->anc_node->num != tree->mod->startnode){
  	  	  Fill_UPP_single(tree,b_fcus);
   	  }else{
@@ -2536,7 +2545,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
 	 //  int br;
 	//      	  int n_edges=2*tree->n_otu-3;
 	//      	  For(br,n_edges) Update_PMat_At_Given_Edge(tree->t_edges[br],tree);
-/*  if(tree->mod->whichrealmodel == HLP16){
+/*  if(tree->mod->whichrealmodel == HLP17){
 	  if(b_fcus->anc_node->num != tree->mod->startnode){
 		  Fill_UPP_single(tree,b_fcus);
 	  }else{
@@ -2551,7 +2560,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
                        tree->mod->s_opt->quickdirty);
     Update_PMat_At_Given_Edge(b_fcus,tree);
 
- /*  if(tree->mod->whichrealmodel == HLP16){
+ /*  if(tree->mod->whichrealmodel == HLP17){
     if(b_fcus->anc_node->num != tree->mod->startnode){
    	  Fill_UPP_single(tree,b_fcus);
     }else{
@@ -2579,7 +2588,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
   	 //     	  For(br,n_edges) Update_PMat_At_Given_Edge(tree->t_edges[br],tree);
   	 //     Get_UPP(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);
 
-  /*if(tree->mod->whichrealmodel == HLP16){
+  /*if(tree->mod->whichrealmodel == HLP17){
 	  if(b_fcus->anc_node->num != tree->mod->startnode){
 		  Fill_UPP_single(tree,b_fcus);
 	  }else{
@@ -2608,7 +2617,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
                        tree->mod->s_opt->brent_it_max,
                        tree->mod->s_opt->quickdirty);
     Update_PMat_At_Given_Edge(b_fcus,tree);
-  /*  if(tree->mod->whichrealmodel == HLP16){
+  /*  if(tree->mod->whichrealmodel == HLP17){
     	if(b_fcus->anc_node->num != tree->mod->startnode){
     		Fill_UPP_single(tree,b_fcus);
     	}else{
@@ -2642,7 +2651,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
  // n_edges=2*tree->n_otu-3;
   	//      	  For(br,n_edges) Update_PMat_At_Given_Edge(tree->t_edges[br],tree);
   	//      Get_UPP(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);
-  /*if(tree->mod->whichrealmodel == HLP16){
+  /*if(tree->mod->whichrealmodel == HLP17){
 	  if(b_fcus->anc_node->num != tree->mod->startnode){
 		  Fill_UPP_single(tree,b_fcus);
 	  }else{
@@ -2695,7 +2704,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
 	    //  	  int n_edges=2*tree->n_otu-3;
 	   //   	  For(br,n_edges) Update_PMat_At_Given_Edge(tree->t_edges[br],tree);
 	   //   Get_UPP(tree->noeud[tree->mod->startnode], tree->noeud[tree->mod->startnode]->v[0], tree);
-	/*  if(tree->mod->whichrealmodel == HLP16){
+	/*  if(tree->mod->whichrealmodel == HLP17){
 		  if(b_fcus->anc_node->num != tree->mod->startnode){
 	       	  Fill_UPP_single(tree,b_fcus);
 	      }else{
@@ -2710,7 +2719,7 @@ void NNI(t_tree *tree, t_edge *b_fcus, int do_swap)
                        tree->mod->s_opt->quickdirty);
     Update_PMat_At_Given_Edge(b_fcus,tree);
 
-    /*if(tree->mod->whichrealmodel == HLP16){
+    /*if(tree->mod->whichrealmodel == HLP17){
     	if(b_fcus->anc_node->num != tree->mod->startnode){
     		Fill_UPP_single(tree,b_fcus);
     	}else{
@@ -2931,7 +2940,7 @@ void Swap(t_node *a, t_node *b, t_node *c, t_node *d, t_tree *tree)
     }
   }
   Update_Dirs(tree);
-  if(tree->mod->whichrealmodel == HLP16){
+  if(tree->mod->whichrealmodel == HLP17){
 	  Update_Ancestors_Edge(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree->noeud[tree->mod->startnode]->b[0],tree); //added by Ken 7/11
   }
  // printf("\n\n");
@@ -3224,7 +3233,7 @@ void Print_Fp_Out(FILE *fp_out, time_t t_beg, time_t t_end, t_tree *tree, option
         }
         
         currTkn = Emit_Out_Token(currTkn, "Model name", "name", SCALARTKN, TFSTRING, "%s %s", io->mod->modelname, t);
-        if(io->modeltypeOpt == HLP16){
+        if(io->modeltypeOpt == HLP17){
           currTkn = Emit_Out_Token(currTkn, "Hotspots", "motifs", SCALARTKN, TFSTRING, "%s", io->mod->motifstring); 
           currTkn = Emit_Out_Token(currTkn, "h optimization", "motifs", SCALARTKN, TFSTRING, "%s", io->mod->hotnessstring);
           currTkn = Emit_Out_Token(currTkn, "Partition file", "motifs", SCALARTKN, TFSTRING, "%s", io->mod->partfile);
@@ -3347,12 +3356,13 @@ void Print_Fp_Out(FILE *fp_out, time_t t_beg, time_t t_end, t_tree *tree, option
             currTkn = Emit_Out_Token(currTkn, "Transition/transversion ratio", "Kappa", SCALARTKN, TFNUMERIC, "%.9f", tree->mod->kappa);
             
             if(tree->mod->n_w_catg == 1) {
-            	int omegai; //Added by Ken 23/8
-            	for(omegai=0;omegai<tree->mod->nomega_part;omegai++){
-            		char *buf;
-            		int temp = asprintf(&buf, "Omega %d %s", omegai, tree->mod->partNames[omegai]);//changed by Ken 12/1/2017
-            		currTkn = Emit_Out_Token(currTkn, buf, buf, SCALARTKN, TFNUMERIC, "%.9f", tree->mod->omega_part[omegai]);
-            	}
+            		int omegai; //Added by Ken 23/8
+            		for(omegai=0;omegai<tree->mod->nomega_part;omegai++){
+            			char *buf = mCalloc(T_MAX_OPTION,sizeof(char));
+            			int temp = asprintf(&buf, "Omega %d %s", omegai, tree->mod->partNames[omegai]);//changed by Ken 12/1/2017
+            			currTkn = Emit_Out_Token(currTkn, buf, buf, SCALARTKN, TFNUMERIC, "%.9f", tree->mod->omega_part[omegai]);
+            		}
+
             } else {
                 currTkn = Emit_Out_Token(currTkn, "Nonsynonmous/synonymous ratio", "Omega", SETSTARTTKN, TFSTRING, "%s", "");
                 for(i = 0; i < tree->mod->n_w_catg; i++ ) {
@@ -3370,11 +3380,10 @@ void Print_Fp_Out(FILE *fp_out, time_t t_beg, time_t t_end, t_tree *tree, option
                 }
                 currTkn = Emit_Out_Token(currTkn, "Nonsynonmous/synonymous ratio", "Omega", SETENDTKN, TFSTRING, "%s", "");
             }
-            
-            if(io->modeltypeOpt==HLP16){
 
             //Prints out hotspot model information and h values
             //Modified by Ken 22/7/2016
+            if(io->modeltypeOpt==HLP17){
               int partsite=0;
               printf("\n");
               for(partsite=0;partsite<io->tree->n_pattern;partsite++){
@@ -3382,12 +3391,10 @@ void Print_Fp_Out(FILE *fp_out, time_t t_beg, time_t t_end, t_tree *tree, option
               }
               printf("\n");
 
-              if(tree->mod->hmode==HDISCRETE){
 
-            currTkn = Emit_Out_Token(currTkn, "Hotspot model\t\th_index\toptimized?\th_value", "motifs", SETSTARTTKN, TFSTRING, "%s", "" );
-            
-            int mot;
-            for(mot=0;mot<io->mod->nmotifs;mot++){
+            	  currTkn = Emit_Out_Token(currTkn, "Hotspot model\t\th_index\toptimized?\th_value", "motifs", SETSTARTTKN, TFSTRING, "%s", "" );
+            	  int mot;
+            	  for(mot=0;mot<io->mod->nmotifs;mot++){
                        currTkn = Emit_Out_Token(currTkn, "", "", TBLSTARTTKN, TFNUMERIC, "%i", 0);
                        char *info = malloc(100);
                        char motifh[10];
@@ -3403,27 +3410,9 @@ void Print_Fp_Out(FILE *fp_out, time_t t_beg, time_t t_end, t_tree *tree, option
                        strcat(info, "\t\t");
                        currTkn = Emit_Out_Token(currTkn, info, "h", SCALARTKN, TFNUMERICNEQ, "%.5f", io->mod->hotness[io->mod->motif_hotness[mot]]);
                       currTkn = Emit_Out_Token(currTkn, "", "", TBLENDTKN, TFNUMERIC, "%i", 4 );
-            }
-            currTkn = Emit_Out_Token(currTkn, "Motif model", "motifs", SETENDTKN, TFSTRING, "%s", "" );
+            	  }
+            	currTkn = Emit_Out_Token(currTkn, "Motif model", "motifs", SETENDTKN, TFSTRING, "%s", "" );
 
-            }else{
-
-            char *info = malloc(100);
-            strcpy(info, "Motif:\t");
-            strcat(info, io->mod->motifs[0]);
-            strcat(info, "\tHintercept");
-            currTkn = Emit_Out_Token(currTkn,info, "motifs", SCALARTKN, TFNUMERIC, "%.6f", tree->mod->hintercept);
-            info = malloc(100);
-             strcpy(info, "Motif:\t");
-             strcat(info, io->mod->motifs[0]);
-             strcat(info, "\tHhotspot");
-            currTkn = Emit_Out_Token(currTkn,info, "motifs", SCALARTKN, TFNUMERIC, "%.6f", tree->mod->hhotspot);
-            info = malloc(100);
-             strcpy(info, "Motif:\t");
-             strcat(info, io->mod->motifs[0]);
-             strcat(info, "\tHcoldspot");
-            currTkn = Emit_Out_Token(currTkn,info, "motifs", SCALARTKN, TFNUMERIC, "%.6f", tree->mod->hcoldspot);
-            }
             }
         }
 
@@ -3853,7 +3842,7 @@ void Print_Fp_Out(FILE *fp_out, time_t t_beg, time_t t_end, t_tree *tree, option
 	    currTkn = Emit_Out_Token(currTkn, "MLTreeSize", "MLTreeSize", SCALARTKN, TFNUMERIC, "%f", Get_Tree_Size(tree));
     }
 
-    if(io->modeltypeOpt == HLP16){ //Added by Ken 23/8
+    if(io->modeltypeOpt == HLP17){ //Added by Ken 23/8
     	 char *info = mCalloc(tree->n_pattern*2+1,sizeof(char));
     	 int indexi;
     	for(indexi=0;indexi<tree->n_pattern;indexi++){
@@ -4917,7 +4906,10 @@ option *Make_Input()
   io->out_stats_file       = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output statistics file.
   io->out_lk_file          = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output likelihood file.
   io->out_ps_file          = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output parsimony score file.
-  io->out_trace_file       = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output file containing each phylogeny explored during tree search.
+ // io->out_trace_file       = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output file containing each phylogeny explored during tree search.
+  io->out_trace_tree_file  = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output file containing each phylogeny explored during tree search.  //added by Ken 9/2/2017
+  io->out_trace_stats_file = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output file containing each phylogeny explored during tree search. //added by Ken 9/2/2017
+  io->tracecount = 0;
   io->nt_or_cd             = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Nucleotide or codon data?.
   io->run_id_string        = (char *)mCalloc(T_MAX_OPTION,sizeof(char)); //!< Name of run id.
   io->clade_list_file      = (char *)mCalloc(T_MAX_FILE,sizeof(char)); //!< Name of output clade list file.
@@ -6175,7 +6167,7 @@ void Copy_Tree(t_tree *ori, t_tree *cpy)
 }
 
 /*********************************************************/
-
+//a: n_link, d: n_oppo_to_link
 void Prune_Subtree(t_node *a, t_node *d, t_edge **target, t_edge **residual, t_tree *tree)
 {
   t_node *v1, *v2;
@@ -6218,7 +6210,7 @@ void Prune_Subtree(t_node *a, t_node *d, t_edge **target, t_edge **residual, t_t
   
   if(v1->tax && v2->tax) PhyML_Printf("\n. Pruning is meaningless here.\n");
   
-  a->v[dir_v1] = NULL; //clear pointers in a node
+  a->v[dir_v1] = NULL; //clear pointers in a node (link node)
   a->v[dir_v2] = NULL;
   a->b[dir_v1] = NULL;
   a->b[dir_v2] = NULL;
@@ -6386,7 +6378,7 @@ void Prune_Subtree(t_node *a, t_node *d, t_edge **target, t_edge **residual, t_t
   (Make_Edge_Dirs(b1,v1,v2)):
   (Make_Edge_Dirs(b1,v2,v1));
   
-  if(target)   (*target)   = b1;
+  if(target)   (*target)   = b1; //one of the edges is left behind, the other connects the two
   if(residual) (*residual) = b2;
   
   
@@ -6399,14 +6391,20 @@ void Prune_Subtree(t_node *a, t_node *d, t_edge **target, t_edge **residual, t_t
   }
 #endif
   
-  
+  if(tree->mod->whichrealmodel==HLP17){ //added by Ken 17/11
+ 	  Update_Ancestors_Edge(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree->noeud[tree->mod->startnode]->b[0],tree); //added by Ken 7/11
+	  if(tree->mod->slowSPR==1){
+	  	  tree->both_sides=1;
+	  	  Lk(tree);
+	  	  Get_UPP(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree);
+	  }
+   }
 }
 
 /*********************************************************/
 
 void Graft_Subtree(t_edge *target, t_node *link, t_edge *residual, t_tree *tree)
 {
-	//printf("graft subtree called\n");
   t_node *v1, *v2;
   int i, dir_v1, dir_v2;
   phydbl *buff_p_lk;
@@ -6524,26 +6522,19 @@ void Graft_Subtree(t_edge *target, t_node *link, t_edge *residual, t_tree *tree)
   Make_Edge_Dirs(residual,residual->left,residual->rght);
   Make_Edge_Dirs(b_up,b_up->left,b_up->rght);
 
-  if(tree->mod->whichrealmodel==HLP16){ //added by Ken 17/11
+  if(tree->mod->whichrealmodel==HLP17){ //added by Ken 17/11
 	  Update_Ancestors_Edge(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree->noeud[tree->mod->startnode]->b[0],tree); //added by Ken 7/11
-	//  printf("\n\n");
-	  tree->both_sides=1;
-	  Lk(tree);
-	  Get_UPP(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree);
-	//  Fast_Br_Len(residual,tree,0);
-	  /*
-	  Optimize_Br_Len_Serie(tree->noeud[tree->mod->startnode],
-				tree->noeud[tree->mod->startnode]->v[0],
-				tree->noeud[tree->mod->startnode]->b[0],
-				tree,
-				tree->data);*/
-	//  Lk(tree);
-	//  Get_UPP(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree);
-
+	  if(tree->mod->slowSPR==1){
+	  	  tree->both_sides=1;
+	  	  Lk(tree);
+	  	  Get_UPP(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree);
+	  }else{
+	  	  Update_PMat_At_Given_Edge(target,tree);
+	  	  Update_PMat_At_Given_Edge(residual,tree);
+	  }
   }else{
-	  tree->both_sides=1;
-	  Lk(tree);
-	  //Fast_Br_Len(residual,tree,0);
+	//  tree->both_sides=1;
+	//  Lk(tree);
   }
 }
 
@@ -6692,7 +6683,6 @@ void Fill_Dir_Table(t_tree *tree)
 
 void Fast_Br_Len(t_edge *b, t_tree *tree, int approx)
 {
-//	printf("doing fast br len1\n");
   phydbl sum;
   phydbl *prob, *F;
   int i, j, k, site;
@@ -6701,14 +6691,7 @@ void Fast_Br_Len(t_edge *b, t_tree *tree, int approx)
   phydbl eps_bl,old_l,new_l;
   int n_iter;
   phydbl scale_rght;
-  
-  /*   Br_Len_Brent(0.02*b->l,b->l,50.*b->l, */
-  /* 	       tree->mod->s_opt->min_diff_lk_local, */
-  /* 	       b,tree, */
-  /* 	       tree->mod->s_opt->brent_it_max, */
-  /* 	       tree->mod->s_opt->quickdirty); */
-  /*   return; */
-  
+
   n_iter = 0;
   dim1   = tree->mod->ns * tree->mod->n_catg;
   dim2   = tree->mod->ns ;
@@ -6723,119 +6706,53 @@ void Fast_Br_Len(t_edge *b, t_tree *tree, int approx)
   For(i,dim1*dim2) F[i] = .0;
   int *scale_down;
   phydbl *p_lk;
-//  printf("starting\n");
 
-  if(tree->mod->whichrealmodel == HLP16){
-	  if(b->rght->num == b->anc_node->num){
-	       p_lk = b->p_lk_left;
-	       scale_down = b->sum_scale_left;
-	     }else{
-	       p_lk = b->p_lk_rght;
-	      scale_down = b->sum_scale_rght;
-	     }
-	//  printf("got this far\n");
-	  For(site,tree->n_pattern){
-	    // Joint probabilities of the states at the two ends of the t_edge
-	    v_rght = -1.;
-	    For(i,tree->mod->ns){
-	      For(j,tree->mod->ns){
-		    For(k,tree->mod->n_catg){
-	          v_rght = (b->des_node->tax)?((phydbl)(b->p_lk_tip_r[site*dim2+j])):(p_lk[site*dim1+k*dim2+j]);
-	          scale_rght = (b->des_node->tax)?(0.0):(scale_down[k*tree->n_pattern+site]);
-
-	          prob[dim3*k+dim2*i+j]              =
-			  b->bPmat_part[tree->mod->partIndex[site]][k*dim3+i*dim2+j] *
-	          b->upp[site][i] *
-	          v_rght *
-	          POW(2.,-(b->sum_scale_upp[k*tree->n_pattern+site] + scale_rght));
-	        }
-		  }
-	    }
-		//  printf("got this far2\n");
-
-	    // Scaling
-	    sum = .0;
-	    For(k,tree->mod->n_catg) For(i,tree->mod->ns) For(j,tree->mod->ns) sum += prob[dim3*k+dim2*i+j];
-	    For(k,tree->mod->n_catg) For(i,tree->mod->ns) For(j,tree->mod->ns) prob[dim3*k+dim2*i+j] /= sum;
-
-	    For(i,tree->mod->ns) For(j,tree->mod->ns) For(k,tree->mod->n_catg)
-	    F[dim3*k+dim2*i+j] += tree->data->wght[site] * prob[dim3*k+dim2*i+j];
-	  }
-
-  }else{
-  For(site,tree->n_pattern)
-  {
+  if(tree->mod->whichrealmodel != HLP17){
+   For(site,tree->n_pattern){
     // Joint probabilities of the states at the two ends of the t_edge
     v_rght = -1.;
-    For(i,tree->mod->ns)
-    {
-      For(j,tree->mod->ns)
-	    {
-	      For(k,tree->mod->n_catg)
-        {
+    For(i,tree->mod->ns){
+      For(j,tree->mod->ns){
+	      For(k,tree->mod->n_catg){
           v_rght = (b->rght->tax)?((phydbl)(b->p_lk_tip_r[site*dim2+j])):(b->p_lk_rght[site*dim1+k*dim2+j]);
           scale_rght = (b->rght->tax)?(0.0):(b->sum_scale_rght[k*tree->n_pattern+site]);
           prob[dim3*k+dim2*i+j]              =
-      //    tree->mod->gamma_r_proba[k]      *
           tree->mod->pi[i]                 *
 		  b->bPmat_part[tree->mod->partIndex[site]][k*dim3+i*dim2+j] *
-       //   b->Pij_rr[k*dim3+i*dim2+j]       *
           b->p_lk_left[site*dim1+k*dim2+i] *
           v_rght *
           POW(2.,-(b->sum_scale_left[k*tree->n_pattern+site] + scale_rght));
-       //   printf("got this far1.111\n");
-
         }
-	    }
+	  }
     }
     // Scaling
     sum = .0;
     For(k,tree->mod->n_catg) For(i,tree->mod->ns) For(j,tree->mod->ns) sum += prob[dim3*k+dim2*i+j];
     For(k,tree->mod->n_catg) For(i,tree->mod->ns) For(j,tree->mod->ns) prob[dim3*k+dim2*i+j] /= sum;
- //   printf("got this far2\n");
 
     // Expected number of each pair of states
     For(i,tree->mod->ns) For(j,tree->mod->ns) For(k,tree->mod->n_catg)
     F[dim3*k+dim2*i+j] += tree->data->wght[site] * prob[dim3*k+dim2*i+j];
+   }
+   old_l = b->l;
+   Opt_Dist_F(&(b->l),F,tree->mod);
+   new_l = b->l;
+   n_iter++;
+   if(b->l < BL_MIN)      b->l = BL_MIN;
+   else if(b->l > BL_MAX) b->l = BL_MAX;
   }
-  }
-  
-  old_l = b->l;
-  Opt_Dist_F(&(b->l),F,tree->mod);
-  new_l = b->l;
-  n_iter++;
-  
-  if(b->l < BL_MIN)      b->l = BL_MIN;
-  else if(b->l > BL_MAX) b->l = BL_MAX;
-  if(!approx){
-//	  printf("about to do brlen_brent4\n");
-/*
-	  if(tree->mod->whichrealmodel == HLP16){
-		  if(b->anc_node->num != tree->mod->startnode){
-			  printf("about to do brlen_brent3.1\n");
-			  Fill_UPP_single(tree,b);
-		  }else{
-			  printf("about to do brlen_brent3.2\n");
-			  Fill_UPP_root(tree,b);
-		  }
-	  }
-	  */
-	//  printf("about to do brlen_brent4\n");
-
-	//  printf("branch length %lf\n",b->l);
+  if(!approx || tree->mod->whichmodel == HLP17){
+	 // if(!approx || tree->mod->whichmodel == HLP17){
+	  //includes lk_at_given_edge
     Br_Len_Brent(0.02*b->l,b->l,50.*b->l,
                  tree->mod->s_opt->min_diff_lk_local,
                  b,tree,
                  tree->mod->s_opt->brent_it_max,
                  tree->mod->s_opt->quickdirty);
   }else{
-	//  printf("about to do lk\n");
     Lk_At_Given_Edge(b,tree);
   }
-//  printf("did the optimization\n");
   Update_PMat_At_Given_Edge(b,tree);
- // printf("did fast brlen\n");
-
 }
 
 /*********************************************************/
@@ -6916,37 +6833,54 @@ phydbl Triple_Dist(t_node *a, t_tree *tree, int approx)
   if(a->tax) return UNLIKELY;
   else
   {
-    Update_PMat_At_Given_Edge(a->b[1],tree);
-    Update_PMat_At_Given_Edge(a->b[2],tree);
-    //if(tree->mod->whichrealmodel==HLP16){Lk(tree);}//added by ken 17/11
-    /*
-    if(tree->mod->whichrealmodel == HLP16){
-    	int i;
-    	For(i,3){
-    		if(a->b[0]->num = a->anc_edge->num){
-    			//Update_Ancestors_Edge(tree->noeud[tree->mod->startnode],tree->noeud[tree->mod->startnode]->v[0],tree->noeud[tree->mod->startnode]->b[0],tree); //added by Ken 7/11
-    			printf("found ancestor\n");
-    			break;
-    		}
-    	}
-    }*/
+	Update_PMat_At_Given_Edge(a->b[1],tree);
+	Update_PMat_At_Given_Edge(a->b[2],tree);
+	if(tree->mod->whichrealmodel==HLP17){
+	  	t_edge* ance = a->anc_edge;
+    	int dir1 = -1;
+		int dir2 = -1;
+		int i=0;
+		For(i,3){
+			if(a->b[i]->num != ance->num){
+				if(dir1 == -1) dir1=i;
+				else dir2 = i;
+			}
+		}
+		//printf("%d %d %d\n",ance->anc_node->num,a->b[dir1]->anc_node->num,a->b[dir2]->anc_node->num);
 
-    Update_P_Lk(tree,a->b[0],a);
-    Fast_Br_Len(a->b[0],tree,approx);
-    /*       Br_Len_Brent (BL_MAX, a->b[0]->l,BL_MIN, 1.e-10,a->b[0],tree,50,0); */
+    	Update_P_Lk(tree,ance,a);
+    	if(ance->anc_node->num != tree->mod->startnode) Fill_UPP_single(tree,ance);
+    	else 											Fill_UPP_root(tree,ance);
+
+    	Fast_Br_Len(ance,tree,approx);
+    	Fill_UPP_single(tree,a->b[dir1]);
+    	Fill_UPP_single(tree,a->b[dir2]);
+
+    	Update_P_Lk(tree,a->b[dir1],a);
+    	Fast_Br_Len(a->b[dir1],tree,approx);
+    	Fill_UPP_single(tree,a->b[dir2]);
     
-    
-    Update_P_Lk(tree,a->b[1],a);
-    Fast_Br_Len(a->b[1],tree,approx);
-    /*       Br_Len_Brent (BL_MAX, a->b[1]->l,BL_MIN, 1.e-10,a->b[1],tree,50,0); */
-    
-    
-    Update_P_Lk(tree,a->b[2],a);
-    Fast_Br_Len(a->b[2],tree,approx);
-    /*       Br_Len_Brent (BL_MAX, a->b[2]->l,BL_MIN, 1.e-10,a->b[2],tree,50,0); */
-    
-    Update_P_Lk(tree,a->b[1],a);
-    Update_P_Lk(tree,a->b[0],a);
+    	Update_P_Lk(tree,a->b[dir2],a);
+    	Fast_Br_Len(a->b[dir2],tree,approx);
+    	Fill_UPP_single(tree,a->b[dir1]);
+
+    	Update_P_Lk(tree,a->b[dir1],a);
+    	Update_P_Lk(tree,a->b[dir2],a);
+    	Update_P_Lk(tree,ance,a);
+  	}else{
+    	Update_P_Lk(tree,a->b[0],a);
+    	Fast_Br_Len(a->b[0],tree,approx);
+    	/*       Br_Len_Brent (BL_MAX, a->b[0]->l,BL_MIN, 1.e-10,a->b[0],tree,50,0); */
+    	Update_P_Lk(tree,a->b[1],a);
+    	Fast_Br_Len(a->b[1],tree,approx);
+    	/*       Br_Len_Brent (BL_MAX, a->b[1]->l,BL_MIN, 1.e-10,a->b[1],tree,50,0); */
+    	Update_P_Lk(tree,a->b[2],a);
+    	Fast_Br_Len(a->b[2],tree,approx);
+    	/*       Br_Len_Brent (BL_MAX, a->b[2]->l,BL_MIN, 1.e-10,a->b[2],tree,50,0); */
+    	Update_P_Lk(tree,a->b[1],a);
+    	Update_P_Lk(tree,a->b[0],a);
+    }
+
   }
   
   return tree->c_lnL;
@@ -6976,6 +6910,8 @@ void Fix_All(t_tree *tree)
 
 void Record_Br_Len(phydbl *where, t_tree *tree)
 {
+
+	// upAllPmats(tree); //added by Ken 19/2/2017
   int i;
   
   if(!where)
@@ -7003,12 +6939,6 @@ void Restore_Br_Len(phydbl *from, t_tree *tree)
     For(i,2*tree->n_otu-3) tree->t_edges[i]->l = from[i];
   }
 }
-
-/*********************************************************/
-/*********************************************************/
-
-/*********************************************************/
-/*********************************************************/
 
 
 /*********************************************************/
@@ -7188,7 +7118,7 @@ void Print_Settings(option *io)
     if(io->mod->pcaModel) PhyML_Printf("\n. Number of PCs:\t\t\t\t %d", io->mod->npcs);
     PhyML_Printf("\n. Equilibrium frequencies model:\t\t %s %s", r,s);
     
-    if(io->modeltypeOpt == HLP16){
+    if(io->modeltypeOpt == HLP17){
         PhyML_Printf("\n. Motifs:\t\t\t\t\t %s", io->mod->motifstring);
         PhyML_Printf("\n. h parameter(s):\t\t\t\t %s", io->mod->hotnessstring);
         PhyML_Printf("\n. Root ID:\t\t\t\t\t %s", io->mod->rootname);
@@ -8522,8 +8452,8 @@ void Set_Model_Name(model *mod)
       case PCM:
         strcpy( tempName, "PCM" );
         break;
-      case HLP16:
-       strcpy( tempName, "HLP16" );
+      case HLP17:
+       strcpy( tempName, "HLP17" );
        break;
       default:
         break;

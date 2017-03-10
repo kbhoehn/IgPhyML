@@ -1,4 +1,10 @@
 /*
+IgPhyML: a program that computes maximum likelihood phylogenies under
+non-reversible codon models designed for antibody lineages.
+
+Copyright (C) Kenneth B Hoehn. Sept 2016 onward.
+
+built upon
 
 codonPHYML: a program that  computes maximum likelihood phylogenies from
 CODON homologous sequences.
@@ -357,7 +363,7 @@ phydbl Lk(t_tree *tree)
   
   //added and modified by Ken to start likelihood calculation at specified node
   int startnode = 0;
-  if(tree->mod->whichrealmodel == HLP16){
+  if(tree->mod->whichrealmodel == HLP17){
 	  startnode = tree->mod->startnode;
   }
   Post_Order_Lk(tree->noeud[startnode],tree->noeud[startnode]->v[0],tree);
@@ -368,7 +374,7 @@ phydbl Lk(t_tree *tree)
   tree->c_lnL             = .0;
   tree->sum_min_sum_scale = .0;
 
-  if(tree->mod->whichrealmodel==HLP16){
+  if(tree->mod->whichrealmodel==HLP17){
 	  Fill_UPP_root(tree,tree->noeud[startnode]->b[0]);
   }
 
@@ -377,7 +383,7 @@ phydbl Lk(t_tree *tree)
 
   For(tree->curr_site,n_patterns)
   {
-	  if(tree->data->wght[tree->curr_site] > SMALL && tree->mod->whichrealmodel==HLP16) Lk_Core_UPP(tree->noeud[startnode]->b[0],tree,tree->noeud[startnode],tree->noeud[startnode]->b[0]->des_node);
+	  if(tree->data->wght[tree->curr_site] > SMALL && tree->mod->whichrealmodel==HLP17) Lk_Core_UPP(tree->noeud[startnode]->b[0],tree,tree->noeud[startnode],tree->noeud[startnode]->b[0]->des_node);
 	  else if(tree->data->wght[tree->curr_site] > SMALL) Lk_Core(tree->noeud[startnode]->b[0],tree);
   }
 
@@ -386,6 +392,14 @@ phydbl Lk(t_tree *tree)
   return tree->c_lnL;
 }
 
+
+void upAllPmats(t_tree *tree)
+{
+  int br, n_patterns, n_edges;
+  n_edges=2*tree->n_otu-3;
+
+  For(br,n_edges) Update_PMat_At_Given_Edge(tree->t_edges[br],tree);
+}
 
 
 /*********************************************************/
@@ -583,7 +597,7 @@ t_node *d = target->anc_node;
 
 
 	   	   if(target->upp[site][i] < smallest_p_lk) smallest_p_lk = target->upp[site][i] ;
-	   }//For(i,tree->mod->ns){
+	   }//For(i,tree->mod->ns)
 
 	   	  sum_scale_adj_val = (sum_scale_adj)?(sum_scale_adj[catg*n_patterns+site]):(0);
 	  	  sum_scale_upp_val = (sum_scale_upp)?(sum_scale_upp[catg*n_patterns+site]):(0);
@@ -611,7 +625,7 @@ t_node *d = target->anc_node;
 	  	 }
 
 	  }//For(catg,tree->mod->n_catg){
-    }
+    }//For(n,sites
 }
 
 void Fill_UPP_root(t_tree *tree, t_edge *b)
@@ -636,7 +650,7 @@ n_v1   n_v2
   int sum_scale_v1_val, sum_scale_v2_val;
   int i,j;
   int catg,site;
-  int dir1,dir2;
+  int dir1,dir2,adjdir,tardir;
   int n_patterns;
   short int ambiguity_check_anc;
   int state_anc;
@@ -656,6 +670,9 @@ n_v1   n_v2
   ambiguity_check_anc = NO;
 
   sum_scale = b->sum_scale_upp;
+
+  int sum_scale_adj_val;
+
 
   if(d->tax)
     {
@@ -704,13 +721,11 @@ n_v1   n_v2
 	      if((anc->tax) && (!tree->mod->s_opt->greedy)){
 		    if(ambiguity_check_anc == NO){
 		      /* For the (non-ambiguous) state at node n_v1 */
-		    	phydbl state = 0;
+		    	phydbl state = 0.0;
 		    	if(state_anc==i){state=1;}
 			     b->upp[site][i] = state; // Ken 17/8/2016
 		    }else{
 		    	 b->upp[site][i] = anc->b[0]->p_lk_tip_r[site*tree->mod->ns+i];
-		    //	printf("\n. Can't currently handle ambiguous states at root node!\n\n");
-		    //	exit(EXIT_FAILURE);
 		    }
 		  }
 
@@ -758,7 +773,7 @@ phydbl Lk_At_Given_Edge(t_edge *b_fcus, t_tree *tree)
 	   Warn_And_Exit("");
 	}
 
-	if(tree->mod->whichrealmodel == HLP16){//Added by Ken 3/8/2016
+	if(tree->mod->whichrealmodel == HLP17){//Added by Ken 3/8/2016
 	  Update_PMat_At_Given_Edge(b_fcus,tree);
 
 	  if(tree->mod->s_opt->opt_topo){
@@ -973,7 +988,12 @@ phydbl Lk_Core_UPP(t_edge *b, t_tree *tree, t_node *anc, t_node *d)
     	  site_lk_cat = BIG / 10;
       }
 
-      if(site_lk_cat < SMALL) site_lk_cat = 0;
+      if(site_lk_cat < SMALL){
+    	  site_lk_cat = SMALL;
+    	  printf("site lk = 0 %d %d %lf %d %d %d.\nSetting underflow to DBL_MIN. See Manual.\n",anc->num,d->num,site_lk_cat,site,sum_scale_upp_cat[catg],sum_scale_down_cat[catg]);
+    	  printf("%lf %lf",tree->mod->omega_part[0],tree->mod->kappa);
+       	  printf("\n");
+      }
       tree->site_lk_cat[catg] = site_lk_cat;
     }
 
@@ -1022,9 +1042,10 @@ phydbl Lk_Core_UPP(t_edge *b, t_tree *tree, t_node *anc, t_node *d)
     {
       PhyML_Printf("\n. site = %d",site);
       PhyML_Printf("\n. invar = %f",tree->data->invar[site]);
-      PhyML_Printf("\n. scale_left = %d scale_rght = %d",sum_scale_down[0],sum_scale_upp[0]);
+      PhyML_Printf("\n. scale_down = %d scale_upp = %d %lf",sum_scale_down[0],sum_scale_upp[0],fact_sum_scale);
       PhyML_Printf("\n. Lk = %G LOG(Lk) = %f < %G",site_lk,log_site_lk,-BIG);
       PhyML_Printf("\n. Err in file %s at line %d\n\n",__FILE__,__LINE__);
+      PhyML_Printf("\n. %d %d %d\n\n",b->num,d->num,anc->num);
       Warn_And_Exit("\n");
     }
   tree->cur_site_lk[site] = log_site_lk;
@@ -1236,10 +1257,13 @@ phydbl Lk_Core(t_edge *b, t_tree *tree)
 	  site_lk_cat = BIG / 10;
 	}
 
-      //if(site_lk_cat < SMALL) site_lk_cat =0;
-      if(site_lk_cat < SMALL) site_lk_cat = 0;
-      //else if(site_lk_cat < 1e-300) site_lk_cat =1e-300;
-      //else if(site_lk_cat < P_LK_LIM_INF) {site_lk_cat = P_LK_LIM_INF; printf("Happened\n");}
+      //if(site_lk_cat < SMALL) site_lk_cat = 0;
+      if(site_lk_cat < SMALL){
+    	  site_lk_cat = SMALL;
+    	  printf("site lk = 0 %lf %d %d %d.\nSetting underflow to DBL_MIN. Probably not a big problem during initial parameter searching..\n",site_lk_cat,site,sum_scale_left_cat[catg],sum_scale_rght_cat[catg]);
+    	  printf("%lf %lf",tree->mod->omega_part[0],tree->mod->kappa);
+       	  printf("\n");
+      }
       tree->site_lk_cat[catg] = site_lk_cat;
     }
 
@@ -1259,7 +1283,6 @@ phydbl Lk_Core(t_edge *b, t_tree *tree)
       if(tree->data->invar[site] > -0.5)
         {
 	  /* Multiply P(D|r=0) by 2^(fact_sum_scale) */
-
 	  inv_site_lk = tree->mod->pi[tree->data->invar[site]];
 	  exponent = fact_sum_scale;
 	  do
@@ -1302,7 +1325,6 @@ phydbl Lk_Core(t_edge *b, t_tree *tree)
   tree->c_lnL_sorted[site] = tree->data->wght[site]*log_site_lk;
 
   tree->c_lnL += tree->data->wght[site]*log_site_lk;
-/*   tree->sum_min_sum_scale += (int)tree->data->wght[site]*min_sum_scale; */
 
   return log_site_lk;
 }
@@ -1367,16 +1389,6 @@ n_v1   n_v2
      calculating them every time... */
   dir1=dir2=-1;
   For(i,3) if(d->b[i] != b) (dir1<0)?(dir1=i):(dir2=i);
-
-/*   if((dir1 == -1) || (dir2 == -1)) */
-/*     { */
-/*       PhyML_Printf("\n. d = %d",d->num); */
-/*       PhyML_Printf("\n. d->v[0] = %d, d->v[1] = %d, d->v[2] = %d",d->v[0]->num,d->v[1]->num,d->v[2]->num); */
-/*       PhyML_Printf("\n. d->b[0] = %d, d->b[1] = %d, d->b[2] = %d",d->b[0]->num,d->b[1]->num,d->b[2]->num); */
-/*       PhyML_Printf("\n. d->num = %d dir1 = %d dir2 = %d",d->num,dir1,dir2); */
-/*       PhyML_Printf("\n. Err in file %s at line %d\n\n",__FILE__,__LINE__); */
-/*       Exit(""); */
-/*     } */
   
   n_v1 = d->v[dir1];
   n_v2 = d->v[dir2];
@@ -1416,9 +1428,6 @@ n_v1   n_v2
       sum_scale_v2 = d->b[dir2]->sum_scale_left;
     }
   
-  /* Change probability matrices on the two pendant edges */
-  //Pij1 = d->b[dir1]->Pij_rr;
-  //Pij2 = d->b[dir2]->Pij_rr;
 
   phydbl **Ppart1 = d->b[dir1]->bPmat_part;
   phydbl **Ppart2 = d->b[dir2]->bPmat_part;
@@ -1435,7 +1444,6 @@ n_v1   n_v2
     {
       state_v1 = state_v2 = -1;
       ambiguity_check_v1 = ambiguity_check_v2 = NO;
-    //  printf("update: %d %d\n",site,tree->mod->partIndex[site]);
       if(!tree->mod->s_opt->greedy)
 	{
 	  /* n_v1 and n_v2 are tip nodes */
@@ -1444,7 +1452,6 @@ n_v1   n_v2
 	      /* Is the state at this tip ambiguous? */
 	      ambiguity_check_v1 = tree->data->c_seq[n_v1->num]->is_ambigu[site];
 	      if(ambiguity_check_v1 == NO) state_v1 = Get_State_From_P_Pars(n_v1->b[0]->p_lk_tip_r,site*dim2,tree);
-	      //if(tree->io->testcondition)if(site==20)printf("%d\n",ambiguity_check_v1);
 	    }
 	      
 	  if(n_v2->tax)
@@ -1452,7 +1459,6 @@ n_v1   n_v2
 	      /* Is the state at this tip ambiguous? */
 	      ambiguity_check_v2 = tree->data->c_seq[n_v2->num]->is_ambigu[site];
 	      if(ambiguity_check_v2 == NO) state_v2 = Get_State_From_P_Pars(n_v2->b[0]->p_lk_tip_r,site*dim2,tree);
-	      //if(tree->io->testcondition)if(site==20)printf("%d\n",ambiguity_check_v2);
 
 	    }
 	}
@@ -1549,14 +1555,6 @@ n_v1   n_v2
 	      curr_scaler_pow = (int)(LOG(p_lk_lim_inf)-LOG(smallest_p_lk))/LOG2;
 	      curr_scaler     = (phydbl)((unsigned long long)(1) << curr_scaler_pow);
 
-/* 	      if(fabs(curr_scaler_pow) > 63 || fabs(curr_scaler_pow) > 63) */
-/* 		{ */
-/* 		  PhyML_Printf("\n. p_lk_lim_inf = %G smallest_p_lk = %G",p_lk_lim_inf,smallest_p_lk); */
-/* 		  PhyML_Printf("\n. curr_scaler_pow = %d",curr_scaler_pow); */
-/* 		  PhyML_Printf("\n. Err in file %s at line %d.",__FILE__,__LINE__); */
-/* 		  Warn_And_Exit("\n"); */
-/* 		} */
-
 	      sum_scale[catg*n_patterns+site] += curr_scaler_pow;
 
 	      do
@@ -1581,7 +1579,7 @@ n_v1   n_v2
 	    }
 	}
     }
-  if(tree->mod->s_opt->opt_topo && tree->mod->whichrealmodel == HLP16){
+  if(tree->mod->s_opt->opt_topo && tree->mod->whichrealmodel == HLP17){
 	  if(b->anc_node->num != tree->mod->startnode){
 		  Fill_UPP_single(tree,b);
 	  }else{
@@ -1730,7 +1728,6 @@ matrix *ML_Dist(calign *data, model *mod)
   
   return mat;
 }
-/*********************************************************/
 /*********************************************************/
 
 void Unconstraint_Lk(t_tree *tree)
@@ -1886,8 +1883,6 @@ void Update_PMat_At_Given_Edge(t_edge *b_fcus, t_tree *tree)
   phydbl len;  
   int i,k;
   
- // printf("updating pmat on %d\n",b_fcus->num);
-
   if(b_fcus->l < BL_MIN)      b_fcus->l = BL_MIN;
   else if(b_fcus->l > BL_MAX) b_fcus->l = BL_MAX;
    
@@ -1949,7 +1944,6 @@ void Update_P_Lk_Along_A_Path(t_node **path, int path_length, t_tree *tree)
 
   For(i,path_length-1)
     {
-	//  printf("on node %d\n",path[i+1]->num);
       For(j,3)
 	if(path[i]->v[j] == path[i+1])
 	  {
@@ -2145,7 +2139,6 @@ void Print_Lk_Given_Edge_Recurr(t_node *a, t_node *d, t_edge *b, t_tree *tree)
 }
 
 /*********************************************************/
-/*********************************************************/
 void Init_Tips_At_One_Site_Codons_Float(char state, int pos, phydbl *p_lk, char * alternatives) //!< Added by Marcelo.
 {
   int i,j,numSenseCodons;
@@ -2237,7 +2230,7 @@ matrix *ML_CODONDist_Pairwise(calign *data, option *io) //!<Added by Marcelo.
   
   //Added by Ken
   //Make Bmat array equivalent to GY94
-  if(io->mod->whichrealmodel == HLP16){
+  if(io->mod->whichrealmodel == HLP17){
 	  int combinations = 3721;
 	  phydbl hot[combinations];
 	  phydbl *tfr = ecmK07freq;
@@ -2374,49 +2367,6 @@ phydbl LK_Codon_Pairwise(calign *data, phydbl *Pij, phydbl *pi, int ns, phydbl l
     }
   } 
   
-//   #if defined OMP || BLAS_OMP //!< Use this if you want to consider unknown characters.
-//   
-//   #pragma omp parallel for private(p_sum0,j,k,n,m,state0,state1) reduction(+:cn_lk)
-//   
-//   #endif
-//   
-//   For(i,data->crunch_len)
-//   {
-//     j=k=-1;
-//     state0=data->c_seq[0]->state[i];
-//     state1=data->c_seq[1]->state[i];
-//     p_sum0=0.0;
-//     
-//     if((state0!=(char)88)&&(state1!=(char)88))
-//     {
-//       cn_lk+=data->wght[i]*log(pi[indexSenseCodons[(int)state0]]*Pij[indexSenseCodons[(int)state0]*ns+indexSenseCodons[(int)state1]]);
-//     }
-//     else if((state0==(char)88)&&(state1!=(char)88)) //!< For the case of unknown characters in the first sequence.
-//     {
-//       while(data->c_seq[0]->alternativeCodons[i][++j]<(char)64)
-//       {
-// 	p_sum0+=pi[indexSenseCodons[(int)data->c_seq[0]->alternativeCodons[i][j]]]*Pij[indexSenseCodons[(int)data->c_seq[0]->alternativeCodons[i][j]]*ns+indexSenseCodons[(int)state1]];
-//       }
-//       cn_lk+=data->wght[i]*log(p_sum0);   
-//     }
-//     else if((state0!=(char)88)&&(state1==(char)88)) //!< For the case of unknown characters in the second sequence.
-//     { 
-//       while(data->c_seq[1]->alternativeCodons[i][++j]<(char)64)
-//       {
-// 	p_sum0+=pi[indexSenseCodons[(int)state0]]*Pij[indexSenseCodons[(int)state0]*ns+indexSenseCodons[(int)data->c_seq[1]->alternativeCodons[i][j]]];
-//       }
-//       cn_lk+=data->wght[i]*log(p_sum0);   
-//     }
-//     else //!< For the case of unknown characters in both sequences.
-//     { 
-//       while(data->c_seq[0]->alternativeCodons[i][++j]<(char)64);
-//       while(data->c_seq[1]->alternativeCodons[i][++k]<(char)64);
-//       
-//       For(n,j) For(m,k) p_sum0+=pi[indexSenseCodons[(int)data->c_seq[0]->alternativeCodons[i][n]]]*Pij[indexSenseCodons[(int)data->c_seq[0]->alternativeCodons[i][n]]*ns+indexSenseCodons[(int)data->c_seq[1]->alternativeCodons[i][m]]];
-//       
-//       cn_lk+=data->wght[i]*log(p_sum0);   
-//     }
-//   }
 
   return cn_lk;
 }
@@ -2478,20 +2428,12 @@ phydbl LK_BFGS_from_CODEML(t_tree* tree, phydbl *x, int n)
     }
 
     if(tree->mod->opthotness){ //added by Kenneth Hoehn 3/6/2016
-    	if(tree->mod->hmode==HDISCRETE){
     		int c;
     		for(c=0;c<tree->mod->nhotness;c++){
     			if(tree->mod->hoptindex[c] == 1){
     				tree->mod->hotness[c] = x[numParams++];
     			}
     		}
-    	}else{
-    		if(tree->mod->hoptindex[0] == 1){
-    		tree->mod->hintercept = x[numParams++];
-    		tree->mod->hhotspot = x[numParams++];
-    		tree->mod->hcoldspot = x[numParams++];
-    		}
-    	}
      }
 
     if(tree->mod->s_opt->opt_state_freq)

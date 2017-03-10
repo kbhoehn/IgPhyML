@@ -111,7 +111,8 @@ struct option longopts[] =
     {"partfile",           required_argument,NULL,150},  //!<Added by Ken
 	{"ambigfile",		  required_argument,NULL,151},  //!<Added by Ken
 	{"threads",		  required_argument,NULL,152},  //!<Added by Ken
-
+	{"slowSPR",		  required_argument,NULL,153},  //!<Added by Ken
+	{"stretch",		  required_argument,NULL,154},  //!<Added by Ken
     {0,0,0,0}
 };
 
@@ -138,9 +139,9 @@ void finishOptions(option * io)
 	io->fp_out_stats = Openfile(io->out_stats_file, io->writemode);
     setupFreqHandling(io);
 
-    //set up HLP16 model
+    //set up HLP17 model
     //Added by Ken 12/7/2016
-    if(io->modeltypeOpt == HLP16){
+    if(io->modeltypeOpt == HLP17){
     	io->mod->opthotness=1;
     	char *minfo1,*minfo2, *mtemp1;
     	int c,d;
@@ -159,23 +160,9 @@ void finishOptions(option * io)
     	}
 
     	//parse motif string
-    	io->mod->hmode = HDISCRETE;
-
     	minfo1 = strdup(io->mod->motifstring);
     	minfo2 = strdup(io->mod->motifstring);
-    	if (strcmp(minfo1,"S5F")==0 || strcmp(minfo1,"7mer")==0){//semi-empirical case
-        	io->mod->hmode=HSEMIEMP;
-        	nh=1;
-        	io->mod->hintercept=0;
-        	io->mod->hhotspot=0;
-        	io->mod->hcoldspot=0;
-        	io->mod->nmotifs=1;
-        	io->mod->motifs = malloc(sizeof(char *) * io->mod->nmotifs);
-        	io->mod->motif_hotness = malloc(sizeof(int ) * io->mod->nmotifs);
-        	io->mod->motifs[0]=malloc(sizeof(char)*10);
-        	strcpy(io->mod->motifs[0],minfo1); //Ken 14/10
-        	io->mod->motif_hotness[0] = 0;
-        }else{//discrete case
+
    	    	io->mod->nmotifs=0;    	//determine number of motifs
    	    	while ((mtemp1 = strsep(&minfo1, ",")) != NULL){io->mod->nmotifs++;}
   	    	io->mod->motifs = malloc(sizeof(char *) * io->mod->nmotifs);
@@ -189,7 +176,6 @@ void finishOptions(option * io)
    	    	   if(io->mod->motif_hotness[c] > nh){nh=io->mod->motif_hotness[c];}
   	    	}
   	    	nh = nh + 1;
-        }//if(strcmp S5F
 
         //parse hotness string
     	minfo1 = strdup(io->mod->hotnessstring);
@@ -257,7 +243,6 @@ void finishOptions(option * io)
     	    io->mod->hotspotcmps[mot] = hot;
     	}
 
-
     	//partition model stuff
     	if(io->mod->partfilespec==1){
 	    FILE *file = fopen(io->mod->partfile, "r");
@@ -273,8 +258,6 @@ void finishOptions(option * io)
         for(c=0;c<io->mod->nomega_part;c++){
         	io->mod->omega_part[c]=0.4;
         }
-
-        //sleep(1); //remove?
 
         int indexi;
         for(indexi=0;indexi<nsite;indexi++){
@@ -319,9 +302,11 @@ void finishOptions(option * io)
     		printf("%d ",io->mod->partIndex[indexi]);
     	}
     	printf("\n");
+
      }else{
     	 io->mod->nparts=1;
     	 io->mod->nomega_part=io->mod->nparts;
+    	 io->mod->omega_part[0]=0.4;
      }//partfilespec==1
     }
 }
@@ -387,7 +372,8 @@ void createOutFiles(option * io)
         io->fp_out_lk = openOutputFile(io->out_lk_file, "_igphyml_lk", ext, io);
     }
     if(io->print_trace) {
-        io->fp_out_trace = openOutputFile(io->out_trace_file, "_igphyml_trace", ".txt", io);
+        io->fp_out_tree_trace = openOutputFile(io->out_trace_tree_file, "_igphyml_tree_trace", ".txt", io);
+        io->fp_out_stats_trace = openOutputFile(io->out_trace_stats_file, "_igphyml_stats_trace", ".txt", io);
     }
     if(io->mod->s_opt->random_input_tree) {
         io->fp_out_trees = openOutputFile(io->out_trees_file, "_igphyml_rand_trees", ".txt", io);
@@ -1231,7 +1217,7 @@ int mainOptionSwitch(int opt, char * optarg, option * io)
                 io->omegaOpt = DGAMMAK;
                 io->wclasses = 4;
             } else {  // single omega value, default case
-                io->omegaOpt = DM0;
+            	io->omegaOpt = DM0;
             }
             break;
         }
@@ -1675,6 +1661,7 @@ int mainOptionSwitch(int opt, char * optarg, option * io)
             io->mod->s_opt->random_input_tree = 1;
             io->mod->s_opt->n_rand_starts = atoi(optarg);
             if(io->mod->s_opt->n_rand_starts < 1) errorMsg = "\n. Number of random starting trees must be > 0.\n\n";
+            break;
         }
             
             //////////////////////////////////////////////////////////////////////////////////////
@@ -1684,6 +1671,7 @@ int mainOptionSwitch(int opt, char * optarg, option * io)
             if((!strcmp(optarg, "spr")) || (!strcmp(optarg, "SPR"))) {
                 io->mod->s_opt->topo_search         = SPR_MOVE;
                 io->mod->s_opt->greedy              = (io->mod->s_opt->steph_spr)?(0):(1);
+                io->print_trace=1;
             } else if((!strcmp(optarg, "nni")) || (!strcmp(optarg, "NNI"))) {
                 io->mod->s_opt->topo_search         = NNI_MOVE;
                 io->mod->s_opt->random_input_tree   = 0;
@@ -1887,10 +1875,10 @@ int mainOptionSwitch(int opt, char * optarg, option * io)
                 strcpy(io->nt_or_cd, "codons");
                 io->datatype              = CODON;       
                 io->modeltypeOpt          = PCM;
-            }else if(strcmp(optarg, "HLP16") == 0) { //set up HLP16 model with default params
+            }else if(strcmp(optarg, "HLP17") == 0) { //set up HLP17 model with default params
                 strcpy(io->nt_or_cd, "codons");      //Added by Ken
                 io->datatype              = CODON;
-                io->modeltypeOpt          = HLP16;
+                io->modeltypeOpt          = HLP17;
                 io->expm				  = SSPADE;
                 io->mod->opthotness       = 1; //optimize h
                 io->mod->kappa            = 1.0; //optimize K
@@ -1898,7 +1886,7 @@ int mainOptionSwitch(int opt, char * optarg, option * io)
                 io->userWantsKappa        = YES;
                 io->eq_freq_handling      = OPTIMIZE; // optimize eq freqs
                 io->mod->freq_model       = CF3X4;
-                io->mod->whichmodel       = HLP16;
+                io->mod->whichmodel       = HLP17;
                 io->freqmodelOpt		  = CF3X4;
                 //Initialize Bmat
                 io->mod->Bmat = (phydbl *)mCalloc(3721,sizeof(phydbl));
@@ -2271,7 +2259,15 @@ int mainOptionSwitch(int opt, char * optarg, option * io)
 			#endif
            	break;
         }
-
+        case 153: {
+        	io->mod->slowSPR=1;
+        	break;
+        }
+        case 154: {
+           	io->mod->stretch=atof(strdup(optarg));
+           	printf("stretch by %lf\n",io->mod->stretch);
+           	break;
+        }
             
             //////////////////////////////////////////////////////////////////////////////////////
             // --multiple
