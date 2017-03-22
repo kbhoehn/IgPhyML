@@ -4,7 +4,7 @@
 # Modifications done by Marcelo S Zanetti.
 
 AC_PREREQ(2.61)
-AC_INIT([IgPHYML],[0.99 201703.10],[kenneth.hoehn@gmail.com])
+AC_INIT([IgPHYML],[1.0 201703.16],[kenneth.hoehn@gmail.com])
 dnl AC_CONFIG_SRCDIR([simu.c])
 AC_CONFIG_SRCDIR([src/simu.c])
 AC_CONFIG_HEADER([config.h])
