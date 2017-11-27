@@ -154,6 +154,10 @@ void finishOptions(option * io)
     	if(io->mod->hotnessstringopt==0){
     	    io->mod->hotnessstring = "e";
     	}
+        if((strcmp(io->mod->motifstring,"FCH")==0)){
+            io->mod->motifstring = "WRC_2:0,GYW_0:1,WA_1:2,TW_0:3,SYC_2:4,GRS_0:5";
+            io->mod->hotnessstring = "e,e,e,e,e,e";
+        }
     	if(io->mod->rootfound==0){
     		printf("\nError: Root sequence ID must be specified using --root\n\n");
     		exit(EXIT_FAILURE);
