@@ -40,8 +40,6 @@ void Read_Command_Line( option *io, int argc, char **argv )
     
     int switchResult;
 
-    printf("Testing\n");
-
     io->mod->motifstringopt=0;
     io->mod->hotnessstringopt=0;
     io->mod->partfilespec=0;
