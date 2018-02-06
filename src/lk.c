@@ -2210,6 +2210,8 @@ matrix *ML_CODONDist_Pairwise(calign *data, option *io) //!<Added by Marcelo.
   mod_tmp->omegaSiteVar = NOOMEGA;
   tmpkappa = io->kappaECM;
   io->kappaECM = kap1;
+  mod_tmp->nomega_part=io->mod->nomega_part;
+  mod_tmp->nparts=io->mod->nparts;
   Make_Model_Complete(mod_tmp);
   mod_tmp->s_opt->opt_kappa = NO;
 

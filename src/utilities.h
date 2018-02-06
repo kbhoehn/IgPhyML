@@ -98,6 +98,8 @@ static inline int isinf_ld (long double x) { return isnan (x - x); }
 
 #define  PHYLIP 0
 #define  NEXUS  1
+#define  FASTA  2
+
 
 #define  YES 1
 #define  NO  0
@@ -1584,6 +1586,10 @@ int Read_Nexus_Matrix(char *token, nexparm *curr_parm, option *io);
 int Read_Nexus_Translate(char *token, nexparm *curr_parm, option *io);
 int Read_Nexus_Tree(char *token, nexparm *curr_parm, option *io);
 int Read_Nexus_Taxa(char *token, nexparm *curr_parm, option *io);
+
+align** Read_Seq_Fasta(option*,model*);
+void scanFasta(model*,FILE*);
+
 void Detect_Align_File_Format(option *io);
 void Detect_Tree_File_Format(option *io);
 int Get_Token(FILE *fp, char *token);

@@ -343,7 +343,6 @@ void Read_Node_Name(t_node *d, char *s_tree_d, t_tree *tree)
   
 }
 /*********************************************************/
-/*********************************************************/
 
 void Clean_Multifurcation(char **subtrees, int current_deg, int end_deg)
 {
@@ -1060,37 +1059,134 @@ void Make_Node_Lk(t_node *n)
   return;
 }
 
+/**********************************************************/
+// Scan across FASTA file to determine number and length of sequences
+void scanFasta(model *mod, FILE* f){
+    rewind(f);
+
+  int nseq=0;
+  int seql=0;
+  char c;
+  int maxnl=-1;
+  int firstseql=-1;
+  int seq=0;
+    int id=0;
+    int otu=-1;
+    int idpos=0;
+    do{
+      c=(char)fgetc(mod->io->fp_in_align);
+      if(c == '>' || c == EOF){
+        id=1;
+        otu++;
+        idpos=0;
+        if(otu==1)firstseql=seql;
+        if(firstseql != seql && otu > 0){
+          printf("\nSome sequences in fasta file are not the same length! %d vs %d\n",firstseql,seql);
+          exit(EXIT_FAILURE);
+        }
+        if(idpos > T_MAX_NAME){
+          printf("An ID is too long. Maximum sequence name is %d\n",T_MAX_NAME);
+          exit(EXIT_FAILURE);
+        }
+        seql=0;
+      }else if(c == '\n' && id){
+        id=0;
+      }
+      if(c == EOF)break;
+
+      if(id){
+        if(c != '>') idpos++;
+      }else if(c!='\n')seql++;
+    }while(1);
+
+  mod->io->n_otu=otu;
+  mod->io->init_len=firstseql;
+  rewind(f);
+  //printf("taxa and length %d\t%d\n",mod->io->n_otu,mod->io->init_len);
+}
+
+
+/**********************************************************/
+
+align **Read_Seq_Fasta(option *io, model *mod)
+{
+  int i,pos;
+  char *line;
+  align **data;
+  char c;
+  data   = (align **)mCalloc(mod->io->n_otu,sizeof(align *));
+  For(i,mod->io->n_otu){
+     data[i]        = (align *)mCalloc(1,sizeof(align));
+     data[i]->name  = (char *)mCalloc(T_MAX_NAME,sizeof(char));
+     data[i]->state = (char *)mCalloc(mod->io->init_len*mod->state_len+1,sizeof(char));
+     data[i]->is_ambigu = NULL;
+     data[i]->len = 0;
+   }
+
+  int seq=0;
+  int id=0;
+  int otu=-1;
+  int idpos=0;
+  do{
+    c=(char)fgetc(mod->io->fp_in_align);
+    if(c == '>'){
+      id=1;
+      otu++;
+      idpos=0;
+    }else if(c == '\n' && id){
+      id=0;
+    }else if(c == EOF)break;
+
+    if(id){
+      if(c != '>'){
+        data[otu]->name[idpos]=c;
+        idpos++;
+      }
+    }else if(c!='\n'){
+      Uppercase(&c);
+      data[otu]->state[data[otu]->len++]=c;
+    }
+  }while(1);
+
+  return data;
+}
+
 /*********************************************************/
 
 void Detect_Align_File_Format(option *io)
 {
   int c;char *m;
   fpos_t curr_pos;
-  
-  fgetpos(io->fp_in_align,&curr_pos);
+  model* mod=io->mod;
+  fgetpos(mod->io->fp_in_align,&curr_pos);
   
   errno = 0;
   
-  while((c=fgetc(io->fp_in_align)) != EOF)
+  while((c=fgetc(mod->io->fp_in_align)) != EOF)
   {
     if(errno) io->data_file_format = PHYLIP;
+    else if(c == '>'){
+      io->data_file_format = FASTA;
+      if(!io->quiet)printf("\nLooks like a fasta file..");
+      return;
+    }
     else if(c == '#')
     {
       char s[10],t[6]="NEXUS";
-      m=fgets(s,6,io->fp_in_align);
+      m=fgets(s,6,mod->io->fp_in_align);
       if(!strcmp(t,s)) 
-	    {
-	      fsetpos(io->fp_in_align,&curr_pos);
-	      io->data_file_format = NEXUS;
-	      return;
-	    }
+      {
+        fsetpos(mod->io->fp_in_align,&curr_pos);
+        io->data_file_format = NEXUS;
+        return;
+      }
     }
   }
   
-  fsetpos(io->fp_in_align,&curr_pos);
+  fsetpos(mod->io->fp_in_align,&curr_pos);
 }
 
-/*********************************************************/
+
 /*********************************************************/
 
 align **Get_Seq(option *io)
@@ -1104,6 +1200,12 @@ align **Get_Seq(option *io)
     case PHYLIP: 
     {
       io->data = Get_Seq_Phylip(io);
+      break;
+    }
+    case FASTA:
+    {
+      scanFasta(io->mod,io->fp_in_align);
+      io->data=Read_Seq_Fasta(io,io->mod);
       break;
     }
     case NEXUS:
