@@ -224,15 +224,27 @@ void finishOptions(option * io)
     	printf(". Loading hotspot tables..\n");
     	io->mod->hotspotcmps = (phydbl**)mCalloc(io->mod->nmotifs,sizeof(phydbl *));
     	for(mot = 0; mot < io->mod->nmotifs; mot++){
-    	    char *infile = mCalloc(strlen(HTABLE)+strlen(io->mod->motifs[mot])+1,sizeof(char));
+    	    char *infile = mCalloc(T_MAX_FILE+strlen(io->mod->motifs[mot])+1,sizeof(char));
     	    strcpy(infile, HTABLE);
     	    strcat(infile, io->mod->motifs[mot]);
-    	    printf("%s\n",infile);
     	    FILE *file = fopen(infile, "r");
     	    if(file == NULL){
-    	    	printf("\n\nCouldn't open %s\n\n",infile);
-    	    	exit(EXIT_FAILURE);
+                const char* igpath = getenv("IGPHYML_PATH");
+                if(igpath==NULL){
+                    printf("Hotspot tables not found in install directory or IGPHYML_PATH.");
+                    printf("Try specifying their location with the IGPHYML_PATH environment variable.");
+                    exit(1);
+                }
+                strcpy(infile, igpath);
+                strcat(infile, "/HTABLE_");
+                strcat(infile, io->mod->motifs[mot]);
+                file = fopen(infile, "r");
+    	    	if(file == NULL){
+                  printf("\n\nCouldn't open %s\n\n",infile);
+    	    	  exit(EXIT_FAILURE);
+                }
     	    }
+            printf("%s\n",infile);
     	    phydbl *hot;
     	    int combinations = 13845841;
     	    hot = (phydbl *)mCalloc(combinations,sizeof(phydbl));//checked 15/7/2016
