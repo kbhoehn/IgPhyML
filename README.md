@@ -1,9 +1,11 @@
 # IgPhyML
 
-Development of IgPhyML has moved to BitBucket: https://bitbucket.org/kbhoehn/igphyml
-Please use that repository for current releases of IgPhyML. Documentation for newer versions of IgPhyML can be found as part of the Change-O package of B cell repertoire analysis programs: https://changeo.readthedocs.io
+## Development of IgPhyML has moved to BitBucket
+The current releases of IgPhyML can be found here: https://bitbucket.org/kbhoehn/igphyml <br />
 
-This repository is currently maintained solely in reference to the work done in this paper: https://doi.org/10.1534/genetics.116.196303
+Documentation for current versions of IgPhyML can be found as part of the Change-O package of B cell repertoire analysis programs: https://changeo.readthedocs.io<br />
 
-If you must use this older version, see doc/IgPhyML_Manual.pdf for installation and usage instructions.
+This GitHub repository is currently maintained solely in reference to the work done in this paper: https://doi.org/10.1534/genetics.116.196303<br />
+
+If you must use the older version in this GitHub repositoty, see doc/IgPhyML_Manual.pdf for installation and usage instructions.
 
